@@ -60,11 +60,7 @@ async function checkAndLoadModels(): Promise<boolean> {
 
   if (!detBlob || !recBlob) {
     // Notify the user via content script
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "OCR_AUTO_DOWNLOADING" }).catch(() => {});
-      }
-    });
+    chrome.runtime.sendMessage({ action: "BROADCAST_DOWNLOADING" }).catch(() => {});
 
     const blobs = await downloadAndCacheModels().catch((err) => {
       console.error("OCRMeow Bridge: Auto-download failed:", err);

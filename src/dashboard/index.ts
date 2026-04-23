@@ -811,17 +811,17 @@ async function performOCR(dataUrl: string): Promise<any[]> {
 
       const requestId = Math.random().toString(36).substring(7);
       const listener = (event: MessageEvent) => {
-        if (event.data.action === "OCR_RESPONSE" && event.data.requestId === requestId) {
+        if (event.data.action === "OCR_RESULT" && event.data.requestId === requestId) {
           window.removeEventListener("message", listener);
           if (event.data.error) reject(new Error(event.data.error));
-          else resolve(event.data.items || []);
+          else resolve(event.data.payload?.items || event.data.payload || []);
         }
       };
 
       window.addEventListener("message", listener);
       sandbox.contentWindow?.postMessage(
         {
-          action: "OCR_REQUEST",
+          action: "RUN_OCR",
           requestId,
           payload: { image: dataUrl },
         },

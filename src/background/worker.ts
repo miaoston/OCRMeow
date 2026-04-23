@@ -54,6 +54,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({});
     return false;
   }
+
+  if (message.action === "BROADCAST_DOWNLOADING") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "OCR_AUTO_DOWNLOADING" }).catch(() => {});
+      }
+    });
+    return false;
+  }
 });
 
 /**
