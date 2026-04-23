@@ -216,7 +216,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       "btn-clear-history",
     ];
     disabledIds.forEach((id) => {
-      const el = document.getElementById(id) as HTMLSelectElement | HTMLInputElement | HTMLButtonElement;
+      const el = document.getElementById(id) as
+        | HTMLSelectElement
+        | HTMLInputElement
+        | HTMLButtonElement;
       if (el) {
         el.disabled = true;
         el.style.opacity = "0.4";
@@ -225,7 +228,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    const labelIds = ["lbl-theme-action", "lbl-distortion", "lbl-export-history", "lbl-clear-history"];
+    const labelIds = [
+      "lbl-theme-action",
+      "lbl-distortion",
+      "lbl-export-history",
+      "lbl-clear-history",
+    ];
     labelIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.textContent += " [EXTENSION ONLY]";
@@ -811,11 +819,14 @@ async function performOCR(dataUrl: string): Promise<any[]> {
       };
 
       window.addEventListener("message", listener);
-      sandbox.contentWindow?.postMessage({
-        action: "OCR_REQUEST",
-        requestId,
-        payload: { image: dataUrl }
-      }, "*");
+      sandbox.contentWindow?.postMessage(
+        {
+          action: "OCR_REQUEST",
+          requestId,
+          payload: { image: dataUrl },
+        },
+        "*",
+      );
     });
   }
 }
@@ -853,19 +864,22 @@ async function checkModelStatus() {
     if (detBlob && recBlob) {
       storagePath.textContent = isZh ? "内部数据库 (IndexedDB)" : "INTERNAL_DB (IDB)";
       storagePath.style.color = "var(--cyan)";
-      
+
       // Initialize Web Mode Sandbox if applicable
       if (IS_WEB_MODE) {
         const sandbox = document.getElementById("ocr-sandbox") as HTMLIFrameElement;
         if (sandbox && sandbox.contentWindow) {
-          sandbox.contentWindow.postMessage({
-            action: "INIT_CONFIG",
-            payload: {
-              detBlob,
-              recBlob,
-              wasmPath: "/wasm/" // In Github Pages, WASM is served from /wasm/
-            }
-          }, "*");
+          sandbox.contentWindow.postMessage(
+            {
+              action: "INIT_CONFIG",
+              payload: {
+                detBlob,
+                recBlob,
+                wasmPath: "/wasm/", // In Github Pages, WASM is served from /wasm/
+              },
+            },
+            "*",
+          );
         }
       }
     } else {
@@ -954,6 +968,3 @@ async function downloadModels() {
       }, 1500);
     });
 }
-
-
-
