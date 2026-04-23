@@ -1,9 +1,35 @@
 import { getAsset } from "../utils/db";
 import { downloadAndCacheModels } from "../utils/models";
+// @ts-ignore
+import { PaddleOCR } from "@paddleocr/paddleocr-js";
 
-const sandbox = document.getElementById("sandbox") as HTMLIFrameElement;
-const pendingRequests = new Map<string, (res: any) => void>();
 let modelsReady = false;
+
+let ocrInstance: any = null;
+let modelUrls: { det: string; rec: string } | null = null;
+let wasmPath: string = chrome.runtime.getURL("/wasm/");
+
+async function initOCR() {
+  if (ocrInstance) return ocrInstance;
+
+  ocrInstance = await PaddleOCR.create({
+    textDetectionModelName: "PP-OCRv5_mobile_det",
+    textDetectionModelAsset: {
+      url: modelUrls!.det,
+    },
+    textRecognitionModelName: "PP-OCRv5_mobile_rec",
+    textRecognitionModelAsset: {
+      url: modelUrls!.rec,
+    },
+    ortOptions: {
+      backend: "wasm",
+      wasmPaths: wasmPath,
+      numThreads: 1,
+    },
+    worker: false,
+  });
+  return ocrInstance;
+}
 
 // Helper to try loading models from IndexedDB or bundled fallback
 async function tryGetModels() {
@@ -22,37 +48,6 @@ async function tryGetModels() {
   }
   return { detBlob, recBlob };
 }
-
-// Wait for iframe to load, then send config
-sandbox.onload = async () => {
-  const { detBlob, recBlob } = await tryGetModels();
-
-  if (detBlob && recBlob) {
-    modelsReady = true;
-    sandbox.contentWindow?.postMessage(
-      {
-        action: "INIT_CONFIG",
-        payload: {
-          detBlob: detBlob,
-          recBlob: recBlob,
-          wasmPath: chrome.runtime.getURL("/wasm/"),
-        },
-      },
-      "*",
-    );
-  } else {
-    // Just send wasmPath first, models will be sent when needed
-    sandbox.contentWindow?.postMessage(
-      {
-        action: "INIT_CONFIG",
-        payload: {
-          wasmPath: chrome.runtime.getURL("/wasm/"),
-        },
-      },
-      "*",
-    );
-  }
-};
 
 async function checkAndLoadModels(): Promise<boolean> {
   if (modelsReady) return true;
@@ -73,20 +68,18 @@ async function checkAndLoadModels(): Promise<boolean> {
   }
 
   if (detBlob && recBlob) {
+    // Revoke stale Blob URLs before creating new ones to prevent memory accumulation
+    if (modelUrls) {
+      URL.revokeObjectURL(modelUrls.det);
+      URL.revokeObjectURL(modelUrls.rec);
+      // Reset instance so it re-initializes with the new model URLs
+      ocrInstance = null;
+    }
+    modelUrls = {
+      det: URL.createObjectURL(detBlob),
+      rec: URL.createObjectURL(recBlob),
+    };
     modelsReady = true;
-    sandbox.contentWindow?.postMessage(
-      {
-        action: "INIT_CONFIG",
-        payload: {
-          detBlob: detBlob,
-          recBlob: recBlob,
-          wasmPath: chrome.runtime.getURL("/wasm/"),
-        },
-      },
-      "*",
-    );
-    // Wait briefly to allow sandbox initialization to begin
-    await new Promise((resolve) => setTimeout(resolve, 100));
     return true;
   }
   return false;
@@ -102,35 +95,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return;
       }
 
-      const requestId = Math.random().toString(36).substring(2);
-      pendingRequests.set(requestId, sendResponse);
-
-      sandbox.contentWindow?.postMessage(
-        {
-          action: "RUN_OCR",
-          payload: message.payload,
-          requestId,
-        },
-        "*",
-      );
+      initOCR()
+        .then(async (ocr) => {
+          const response = await fetch(message.payload.image);
+          const blob = await response.blob();
+          const results = await ocr.predict(blob);
+          sendResponse(results[0]);
+        })
+        .catch((error: any) => {
+          console.error("OCRMeow Offscreen OCR Error:", error);
+          sendResponse({ error: error.message || "Unknown OCR Error" });
+        });
     })();
 
     return true; // Keep channel open for async response
-  }
-});
-
-// Listen for results from Sandbox
-window.addEventListener("message", (event) => {
-  const { action, payload, requestId, error } = event.data;
-  if (action === "OCR_RESULT") {
-    const sendResponse = pendingRequests.get(requestId);
-    if (sendResponse) {
-      if (error) {
-        sendResponse({ error });
-      } else {
-        sendResponse(payload);
-      }
-      pendingRequests.delete(requestId);
-    }
   }
 });

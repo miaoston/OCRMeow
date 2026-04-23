@@ -1,59 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🐱 OCRMeow Studio - AI Powered Offline OCR</title>
-  <style>
-    body, html {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      background: #08090c; color: #e0e4e8;
-      font-family: 'Fira Code', monospace;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
-    .loading-gate {
-      text-align: center;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .btn-launch {
-      padding: 15px 30px;
-      border: 2px solid #00f3ff;
-      background: rgba(0, 243, 255, 0.1);
-      color: #00f3ff;
-      cursor: pointer;
-      font-weight: bold;
-      letter-spacing: 2px;
-      text-decoration: none;
-      transition: all 0.3s;
-    }
-    .btn-launch:hover {
-      background: #00f3ff;
-      color: #000;
-      box-shadow: 0 0 20px #00f3ff;
-    }
-  </style>
-</head>
-<body>
-  <!-- This page serves as the entry for GitHub Pages Studio -->
-  <div class="loading-gate" id="gate">
-    <h1 style="color: #00f3ff; letter-spacing: 5px;">OCRMEOW://STUDIO</h1>
-    <p style="color: rgba(255,255,255,0.4); font-size: 12px; margin-bottom: 30px;">
-      SYSTEM_MODE: WEB_DEMO | ENGINE: PADDLEOCR.JS
-    </p>
-    <a href="dashboard.html" class="btn-launch">OPEN_STUDIO_TERMINAL</a>
-  </div>
-  
-  <script>
-    // Redirect to the full dashboard if accessed directly on web
-    // This keeps index.html clean while providing the full experience
-    if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
-      // Small delay for aesthetic effect
-      setTimeout(() => {
-        window.location.href = 'dashboard.html';
-      }, 800);
-    }
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🐱 OCRMeow Studio - AI Powered Offline OCR</title>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #08090c;
+        color: #e0e4e8;
+        font-family: "Fira Code", monospace;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .loading-gate {
+        text-align: center;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .btn-launch {
+        padding: 15px 30px;
+        border: 2px solid #00f3ff;
+        background: rgba(0, 243, 255, 0.1);
+        color: #00f3ff;
+        cursor: pointer;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+      .btn-launch:hover {
+        background: #00f3ff;
+        color: #000;
+        box-shadow: 0 0 20px #00f3ff;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- This page serves as the entry for GitHub Pages Studio -->
+    <div class="loading-gate" id="gate">
+      <h1 style="color: #00f3ff; letter-spacing: 5px">OCRMEOW://STUDIO</h1>
+      <p style="color: rgba(255, 255, 255, 0.4); font-size: 12px; margin-bottom: 30px">
+        SYSTEM_MODE: WEB_DEMO | ENGINE: PADDLEOCR.JS
+      </p>
+      <a href="dashboard.html" class="btn-launch">OPEN_STUDIO_TERMINAL</a>
+    </div>
+
+    <script>
+      // Redirect to the full dashboard if accessed directly on web
+      // This keeps index.html clean while providing the full experience
+      if (
+        window.location.pathname.endsWith("index.html") ||
+        window.location.pathname.endsWith("/")
+      ) {
+        // Small delay for aesthetic effect
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 800);
+      }
+    </script>
+  </body>
 </html>
