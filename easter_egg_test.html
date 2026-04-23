@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OCRMeow Easter Egg Test</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@paddleocr/paddleocr-js": "/node_modules/@paddleocr/paddleocr-js/dist/index.mjs",
+          "js-yaml": "/node_modules/js-yaml/dist/js-yaml.mjs",
+          "clipper-lib": "/node_modules/clipper-lib/clipper.js",
+          "@techstark/opencv-js": "/node_modules/@techstark/opencv-js/dist/opencv.js",
+          "onnxruntime-web": "/node_modules/onnxruntime-web/dist/ort.min.mjs"
+        }
+      }
+    </script>
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: monospace;
+      }
+      #canvas-container {
+        margin: 20px 0;
+        border: 1px solid #444;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OCR Easter Egg Test</h1>
+    <div id="status">Generating Image...</div>
+    <div id="canvas-container">
+      <canvas id="test-canvas" width="600" height="300"></canvas>
+    </div>
+    <div id="logs"></div>
+
+    <script type="module">
+      import { PaddleOCR } from "@paddleocr/paddleocr-js";
+
+      function log(msg) {
+        console.log(msg);
+        const div = document.createElement("div");
+        div.textContent = msg;
+        document.getElementById("logs").appendChild(div);
+        document.getElementById("status").textContent = msg;
+      }
+
+      async function generateImageBlob() {
+        const canvas = document.getElementById("test-canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000000";
+        ctx.font = "30px sans-serif";
+        ctx.fillText("一切都是命运石之门的选择", 50, 80);
+        ctx.font = "30px sans-serif";
+        ctx.fillText("This is the choice of Steins;Gate", 50, 160);
+        ctx.font = "30px sans-serif";
+        ctx.fillText("すべては運命石の扉の選択である", 50, 240);
+        return new Promise((resolve) => {
+          canvas.toBlob((blob) => resolve(blob), "image/png");
+        });
+      }
+
+      async function runTest() {
+        try {
+          log("Drawing test image...");
+          const blob = await generateImageBlob();
+
+          log("Initializing PaddleOCR engine...");
+          // In production (dist), public contents are at root, so /wasm/
+          // In Vite dev, /wasm/ also works because it proxies /public/
+          const wasmPath = window.location.origin + "/wasm/";
+
+          log(`Using wasmPath: ${wasmPath}`);
+          const ocr = await PaddleOCR.create({
+            lang: "ch",
+            ocrVersion: "PP-OCRv5",
+            wasmPath: wasmPath,
+            ortOptions: {
+              backend: "wasm",
+            },
+          });
+
+          log("Running OCR prediction...");
+          const [result] = await ocr.predict(blob);
+          log(`Found ${result.items.length} text blocks.`);
+
+          const allText = result.items.map((item) => item.text).join(" ");
+          log(`Extracted Text: ${allText}`);
+
+          const checks = [
+            allText.includes("命运石之门"),
+            allText.includes("Steins") || allText.includes("Gate"),
+            allText.includes("運命石") || allText.includes("运命石"),
+          ];
+
+          if (checks.every(Boolean)) {
+            log("✅ PASS: All key phrases detected!");
+            const resultDiv = document.createElement("div");
+            resultDiv.id = "test-result";
+            resultDiv.textContent = "PASS";
+            document.body.appendChild(resultDiv);
+          } else {
+            log("❌ FAIL: Phrases missing.");
+            const resultDiv = document.createElement("div");
+            resultDiv.id = "test-result";
+            resultDiv.textContent = "FAIL";
+            document.body.appendChild(resultDiv);
+          }
+        } catch (err) {
+          log(`❌ ERROR: ${err.message}`);
+          const resultDiv = document.createElement("div");
+          resultDiv.id = "test-result";
+          resultDiv.textContent = "ERROR";
+          document.body.appendChild(resultDiv);
+        }
+      }
+
+      runTest();
+    </script>
+  </body>
+</html>

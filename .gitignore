@@ -1,0 +1,11 @@
+node_modules
+dist
+logs
+public/models/*
+!public/models/.gitkeep
+public/wasm/*
+!public/wasm/.gitkeep
+temp_paddleocr
+.DS_Store
+\n# Agent specialized files\nAGENTS.md\nGEMINI.md\nTODO.md
+\n# Critical: Agent/Meta files (DO NOT REMOVE)\nAGENTS.md\nGEMINI.md\nTODO.md

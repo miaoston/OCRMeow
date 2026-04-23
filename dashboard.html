@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🐱 OCRMeow Studio</title>
+    <style>
+      /* ─── Design Tokens ─────────────────────────────────── */
+      :root {
+        --bg: #08090c;
+        --bg-surface: #0c0d11;
+        --bg-elevated: #101218;
+        --cyan: #00f3ff;
+        --cyan-dim: rgba(0, 243, 255, 0.15);
+        --cyan-ghost: rgba(0, 243, 255, 0.06);
+        --magenta: #ff00ff;
+        --magenta-dim: rgba(255, 0, 255, 0.12);
+        --border: rgba(0, 243, 255, 0.1);
+        --border-bright: rgba(0, 243, 255, 0.3);
+        --text: #e0e4e8;
+        --text-dim: rgba(255, 255, 255, 0.4);
+        --red: #ff4455;
+        --green: #00ff88;
+        --font: "Fira Code", "Cascadia Code", "SF Mono", "Consolas", monospace;
+      }
+
+      /* ─── Reset & Base ──────────────────────────────────── */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      /* ─── Scanline Overlay (full page) ──────────────────── */
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px
+        );
+      }
+
+      /* ─── Sidebar ───────────────────────────────────────── */
+      .sidebar {
+        width: 240px;
+        background: var(--bg-surface);
+        border-right: 1px solid var(--border);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 24px 20px;
+        font-size: 13px;
+        font-weight: 900;
+        color: var(--cyan);
+        letter-spacing: 2px;
+        border-bottom: 1px solid var(--border);
+        text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+      }
+      .brand-led {
+        width: 8px;
+        height: 8px;
+        background: var(--cyan);
+        border-radius: 1px;
+        box-shadow: 0 0 8px var(--cyan);
+        animation: led-pulse 2s ease-in-out infinite;
+      }
+      @keyframes led-pulse {
+        0%,
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 8px var(--cyan);
+        }
+        50% {
+          opacity: 0.5;
+          box-shadow: 0 0 3px var(--cyan);
+        }
+      }
+
+      .nav-menu {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 0;
+        gap: 2px;
+      }
+      .nav-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        border-left: 3px solid transparent;
+        user-select: none;
+      }
+      .nav-item:hover {
+        background: var(--cyan-ghost);
+        color: var(--text);
+        transform: translateX(4px);
+      }
+      .nav-item.active {
+        background: var(--cyan-dim);
+        color: var(--cyan);
+        border-left-color: var(--cyan);
+      }
+
+      /* Sidebar footer hex decoration */
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 16px 20px;
+        border-top: 1px solid var(--border);
+        font-size: 8px;
+        color: rgba(0, 243, 255, 0.15);
+        letter-spacing: 2px;
+        word-break: break-all;
+        line-height: 1.8;
+      }
+
+      /* ─── Main Content ──────────────────────────────────── */
+      .main-content {
+        flex: 1;
+        padding: 0;
+        overflow-y: auto;
+        position: relative;
+        background: var(--bg);
+      }
+      .main-content::-webkit-scrollbar {
+        width: 6px;
+      }
+      .main-content::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .main-content::-webkit-scrollbar-thumb {
+        background: rgba(0, 243, 255, 0.15);
+        border-radius: 3px;
+      }
+
+      .view-section {
+        display: none;
+        padding: 32px 40px;
+        animation: fadeIn 0.3s ease;
+      }
+      .view-section.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ─── Page Headers ──────────────────────────────────── */
+      .page-header {
+        margin-bottom: 32px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .page-header h1 {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: var(--cyan);
+        text-shadow: 0 0 12px rgba(0, 243, 255, 0.2);
+        margin-bottom: 6px;
+      }
+      .page-header .subtitle {
+        color: var(--text-dim);
+        font-size: 11px;
+        letter-spacing: 1px;
+      }
+
+      /* ─── Dropzone ──────────────────────────────────────── */
+      .dropzone {
+        border: 2px dashed var(--border);
+        border-radius: 2px;
+        padding: 48px 32px;
+        text-align: center;
+        background: var(--bg-surface);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+      .dropzone::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+        animation: dropzone-scan 3s linear infinite;
+      }
+      @keyframes dropzone-scan {
+        0% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+      .dropzone:hover,
+      .dropzone.dragover {
+        border-color: var(--cyan);
+        background: var(--cyan-ghost);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 243, 255, 0.08);
+      }
+      .dropzone-icon {
+        font-size: 2.5rem;
+        margin-bottom: 12px;
+        opacity: 0.7;
+      }
+
+      /* ─── Result Cards ──────────────────────────────────── */
+      .result-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        padding: 0;
+        margin-top: 16px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+      .result-card:hover {
+        border-color: var(--border-bright);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--cyan-ghost);
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+      .result-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .result-header-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .result-image-container {
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        background: rgba(0, 0, 0, 0.2);
+      }
+      .result-image {
+        max-width: 100%;
+        max-height: 180px;
+        border-radius: 2px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: block;
+      }
+      .result-image:hover {
+        border-color: var(--cyan);
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+      }
+      .result-text {
+        font-family: var(--font);
+        font-size: 12px;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 16px;
+        color: var(--cyan);
+        outline: none;
+        border: none;
+      }
+      .result-text:focus {
+        background: rgba(0, 0, 0, 0.5);
+      }
+      .result-timing {
+        font-size: 9px;
+        color: var(--green);
+        letter-spacing: 1px;
+      }
+
+      /* ─── Buttons ────────────────────────────────────────── */
+      .btn {
+        border-radius: 2px;
+        cursor: pointer;
+        font-weight: 700;
+        font-family: var(--font);
+        font-size: 10px;
+        letter-spacing: 1px;
+        transition: all 0.2s ease;
+        outline: none;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-dim);
+        padding: 6px 12px;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 243, 255, 0.15);
+        color: var(--cyan);
+        border-color: var(--cyan);
+      }
+      .btn:active {
+        transform: translateY(0) scale(0.97);
+      }
+      .btn-primary {
+        background: var(--cyan-dim);
+        color: var(--cyan);
+        border-color: var(--cyan);
+      }
+      .btn-primary:hover {
+        background: rgba(0, 243, 255, 0.25);
+      }
+      .btn-danger {
+        color: var(--red);
+        border-color: rgba(255, 68, 85, 0.3);
+      }
+      .btn-danger:hover {
+        background: rgba(255, 68, 85, 0.1);
+        border-color: var(--red);
+        box-shadow: 0 4px 12px rgba(255, 68, 85, 0.15);
+        color: var(--red);
+      }
+
+      /* ─── Modal Dialog ───────────────────────────────────── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(6px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: modal-fade-in 0.2s ease;
+      }
+      @keyframes modal-fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes modal-slide-in {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .modal-box {
+        background: linear-gradient(170deg, #0d0e12 0%, #0a0b0d 40%, #080a0c 100%);
+        border: 2px solid var(--cyan);
+        border-radius: 2px;
+        width: 420px;
+        max-width: 90vw;
+        box-shadow:
+          0 0 60px rgba(0, 0, 0, 0.9),
+          0 0 30px var(--cyan-dim),
+          inset 0 0 20px var(--cyan-ghost);
+        font-family: var(--font);
+        overflow: hidden;
+        animation: modal-slide-in 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        position: relative;
+      }
+      .modal-scanline {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+        z-index: 1;
+        pointer-events: none;
+        animation: ocrmeow-scanline 4s linear infinite;
+      }
+      @keyframes ocrmeow-scanline {
+        0% {
+          transform: translateY(-100%);
+        }
+        100% {
+          transform: translateY(600px);
+        }
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--cyan-ghost);
+      }
+      .modal-led {
+        width: 6px;
+        height: 6px;
+        border-radius: 1px;
+        background: var(--cyan);
+        animation: led-pulse 2s ease-in-out infinite;
+      }
+      @keyframes led-pulse {
+        0%,
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 6px currentColor;
+        }
+        50% {
+          opacity: 0.5;
+          box-shadow: 0 0 2px currentColor;
+        }
+      }
+      .modal-title {
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--cyan);
+        text-shadow: 0 0 8px var(--cyan-dim);
+      }
+      .modal-body {
+        padding: 24px 20px;
+        font-size: 13px;
+        line-height: 1.8;
+        color: var(--text);
+      }
+      .modal-body .modal-icon {
+        font-size: 28px;
+        display: block;
+        margin-bottom: 12px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 12px 20px 18px 20px;
+      }
+      .modal-actions .btn {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+      }
+      .modal-actions .btn-confirm {
+        background: var(--cyan-dim);
+        color: var(--cyan);
+        border-color: var(--cyan);
+      }
+      .modal-actions .btn-confirm:hover {
+        background: var(--border-bright);
+        box-shadow: 0 4px 15px var(--cyan-dim);
+      }
+      .modal-actions .btn-destructive {
+        background: rgba(255, 68, 85, 0.12);
+        color: var(--red);
+        border-color: rgba(255, 68, 85, 0.3);
+      }
+      .modal-actions .btn-destructive:hover {
+        background: rgba(255, 68, 85, 0.2);
+        box-shadow: 0 4px 15px rgba(255, 68, 85, 0.2);
+      }
+
+      /* ─── Settings ──────────────────────────────────────── */
+      .settings-group {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        padding: 24px;
+        margin-bottom: 24px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .settings-group::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: var(--cyan);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .settings-group:hover {
+        border-color: var(--border-bright);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      }
+      .settings-group:hover::before {
+        opacity: 1;
+      }
+      .settings-group h3 {
+        margin-bottom: 20px;
+        color: var(--cyan);
+        font-size: 12px;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: all 0.15s ease;
+      }
+      .setting-item:last-child {
+        border-bottom: none;
+      }
+      .setting-item:hover {
+        padding-left: 8px;
+      }
+      .setting-label {
+        font-weight: 700;
+        font-size: 12px;
+        color: var(--text);
+        letter-spacing: 0.5px;
+      }
+      .setting-desc {
+        font-size: 10px;
+        color: var(--text-dim);
+        margin-top: 4px;
+        max-width: 400px;
+        line-height: 1.6;
+      }
+
+      /* Custom Controls */
+      select,
+      input[type="number"] {
+        background: rgba(0, 0, 0, 0.5);
+        color: var(--cyan);
+        border: 1px solid var(--border);
+        padding: 8px 12px;
+        border-radius: 2px;
+        font-size: 12px;
+        font-family: var(--font);
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s ease;
+      }
+      select:hover,
+      select:focus,
+      input[type="number"]:hover,
+      input[type="number"]:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+      }
+      input[type="number"] {
+        width: 80px;
+        text-align: center;
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        opacity: 1;
+      }
+
+      /* Range Slider */
+      .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 180px;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        background: transparent;
+      }
+      input[type="range"]:focus {
+        outline: none;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 2px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 2px;
+        background: var(--cyan);
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -6px;
+        box-shadow: 0 0 8px var(--cyan);
+        transition: transform 0.15s ease;
+      }
+      input[type="range"]:active::-webkit-slider-thumb {
+        transform: scale(1.3);
+      }
+      .slider-value {
+        font-family: var(--font);
+        color: var(--cyan);
+        font-weight: bold;
+        font-size: 12px;
+        min-width: 28px;
+        text-align: right;
+      }
+
+      /* GitHub Link */
+      .github-link {
+        color: var(--cyan);
+        text-decoration: none;
+        font-weight: 900;
+        padding: 10px 24px;
+        border-radius: 2px;
+        background: var(--cyan-ghost);
+        border: 1px solid var(--cyan);
+        transition: all 0.3s ease;
+        display: inline-block;
+        font-size: 11px;
+        letter-spacing: 1px;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+      }
+      .github-link:hover {
+        background: var(--cyan);
+        color: #000;
+        transform: translateY(-2px);
+        box-shadow: 0 0 30px var(--cyan);
+      }
+
+      /* ─── Image Lightbox ────────────────────────────────── */
+      .lightbox-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        cursor: zoom-out;
+        backdrop-filter: blur(8px);
+      }
+      .lightbox-overlay img {
+        max-width: 90vw;
+        max-height: 90vh;
+        border: 2px solid var(--cyan);
+        border-radius: 2px;
+        box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
+      }
+
+      /* ─── Loading ───────────────────────────────────────── */
+      .loading-indicator {
+        display: none;
+        text-align: center;
+        color: var(--magenta);
+        margin: 32px 0;
+        font-weight: 900;
+        font-size: 12px;
+        letter-spacing: 2px;
+        animation: loading-blink 1.5s ease-in-out infinite;
+      }
+      @keyframes loading-blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* ─── Empty State ───────────────────────────────────── */
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-dim);
+        font-size: 11px;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-led"></div>
+        OCRMEOW://STUDIO
+      </div>
+      <nav class="nav-menu">
+        <div class="nav-item active" data-target="studio" id="nav-studio">◉ WORKSPACE</div>
+        <div class="nav-item" data-target="history" id="nav-history">◎ HISTORY</div>
+        <div class="nav-item" data-target="settings" id="nav-settings">⚙ SETTINGS</div>
+      </nav>
+      <div class="sidebar-footer">0x1F 0x3C 0x7A 0xBB 0xE2 0xF0 0x4D 0x9A 0x55 0xC8 0x01 0xAF</div>
+    </aside>
+
+    <main class="main-content">
+      <!-- Workspace View -->
+      <section id="view-studio" class="view-section active">
+        <div class="page-header">
+          <h1 id="title-workspace">WORKSPACE</h1>
+          <div class="subtitle" id="subtitle-workspace">
+            Drag & Drop images, paste from clipboard (Ctrl+V), or click to upload.
+          </div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">📁</div>
+          <div
+            style="font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; font-size: 12px"
+            id="dropzone-text"
+          >
+            CLICK_OR_DRAG_IMAGE
+          </div>
+          <div
+            style="color: var(--text-dim); font-size: 10px; letter-spacing: 1px"
+            id="dropzone-sub"
+          >
+            SUPPORTS: PNG / JPG / WebP
+          </div>
+          <input type="file" id="file-input" accept="image/*" style="display: none" />
+        </div>
+
+        <div class="loading-indicator" id="loading-indicator">
+          <span id="loading-text">⚡ OCR_ENGINE::PROCESSING...</span>
+        </div>
+
+        <div id="results-container">
+          <!-- Results injected here -->
+        </div>
+      </section>
+
+      <!-- History View -->
+      <section id="view-history" class="view-section">
+        <div class="page-header">
+          <h1 id="title-history">HISTORY</h1>
+          <div class="subtitle" id="subtitle-history">
+            Past OCR results with source images. Click image to zoom.
+          </div>
+        </div>
+        <div id="history-container">
+          <!-- History items injected here -->
+        </div>
+      </section>
+
+      <!-- Settings View -->
+      <section id="view-settings" class="view-section">
+        <div class="page-header">
+          <h1 id="title-settings">SETTINGS</h1>
+          <div class="subtitle" id="subtitle-settings">Configure your OCRMeow experience.</div>
+        </div>
+
+        <div class="settings-group">
+          <h3 id="setting-grp-general">▸ GENERAL</h3>
+
+          <div class="setting-item">
+            <div>
+              <div class="setting-label" id="lbl-lang">Language</div>
+              <div class="setting-desc" id="desc-lang">
+                Interface language (Auto detects browser setting)
+              </div>
+            </div>
+            <select id="setting-language">
+              <option value="auto">Auto (Browser)</option>
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <div class="setting-label" id="lbl-model">OCR Model</div>
+              <div class="setting-desc" id="desc-model">
+                The underlying AI engine for text recognition
+              </div>
+            </div>
+            <select id="setting-model">
+              <option value="ppocr_v5">PP-OCRv5 (Fast & Accurate)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 id="setting-grp-models">▸ MODEL MANAGEMENT</h3>
+          <div class="setting-item" style="align-items: flex-start">
+            <div style="flex: 1">
+              <div class="setting-label" id="lbl-model-status">AI Infrastructure Status</div>
+              <div class="setting-desc" id="desc-model-status">
+                PaddleOCR.js requires both detection and recognition models to function. Models are
+                cached in browser's persistent IndexedDB.
+              </div>
+
+              <!-- New Detailed Model Status Area -->
+              <div
+                class="model-status-grid"
+                style="
+                  margin-top: 16px;
+                  font-family: &quot;Fira Code&quot;, monospace;
+                  font-size: 11px;
+                  background: rgba(0, 0, 0, 0.2);
+                  padding: 12px;
+                  border: 1px solid var(--border);
+                  border-radius: 2px;
+                  position: relative;
+                  overflow: hidden;
+                "
+              >
+                <div
+                  style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: repeating-linear-gradient(
+                      0deg,
+                      transparent,
+                      transparent 1px,
+                      rgba(0, 243, 255, 0.03) 1px,
+                      rgba(0, 243, 255, 0.03) 2px
+                    );
+                    pointer-events: none;
+                  "
+                ></div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 4px 0;
+                    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+                    position: relative;
+                  "
+                >
+                  <span style="color: var(--text-dim); letter-spacing: 1px">[ DET_CORE_v5 ]</span>
+                  <span id="status-det" style="color: var(--red); font-weight: bold">MISSING</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 4px 0;
+                    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+                    position: relative;
+                  "
+                >
+                  <span style="color: var(--text-dim); letter-spacing: 1px">[ REC_CORE_v5 ]</span>
+                  <span id="status-rec" style="color: var(--red); font-weight: bold">MISSING</span>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 4px 0;
+                    position: relative;
+                  "
+                >
+                  <span style="color: var(--text-dim); letter-spacing: 1px">[ FS_LOCATION ]</span>
+                  <span id="storage-path" style="color: var(--cyan)">INDEXED_DB://INTERNAL</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align: right; min-width: 140px; padding-top: 4px">
+              <button id="btn-download-models" class="btn" style="width: 100%">
+                INITIALIZE_MODELS
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="setting-item"
+            style="flex-direction: column; align-items: flex-start; gap: 8px"
+          >
+            <div>
+              <div class="setting-label" id="lbl-url-det">Detection Model URL (det.tar)</div>
+              <div class="setting-desc" id="desc-url-det">
+                Advanced: Override the default download source.
+              </div>
+            </div>
+            <input
+              type="text"
+              id="setting-url-det"
+              value="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar"
+              style="
+                width: 100%;
+                background: var(--bg-card);
+                color: var(--text-primary);
+                border: 1px solid #333;
+                padding: 6px 10px;
+                font-family: monospace;
+                font-size: 11px;
+              "
+            />
+          </div>
+
+          <div
+            class="setting-item"
+            style="flex-direction: column; align-items: flex-start; gap: 8px"
+          >
+            <div>
+              <div class="setting-label" id="lbl-url-rec">Recognition Model URL (rec.tar)</div>
+              <div class="setting-desc" id="desc-url-rec">
+                Advanced: Override the default download source.
+              </div>
+            </div>
+            <input
+              type="text"
+              id="setting-url-rec"
+              value="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar"
+              style="
+                width: 100%;
+                background: var(--bg-card);
+                color: var(--text-primary);
+                border: 1px solid #333;
+                padding: 6px 10px;
+                font-family: monospace;
+                font-size: 11px;
+              "
+            />
+          </div>
+          <div id="model-download-progress" style="display: none; margin-top: 10px">
+            <div
+              style="
+                font-size: 11px;
+                margin-bottom: 5px;
+                color: var(--cyan);
+                display: flex;
+                justify-content: space-between;
+              "
+            >
+              <span id="model-progress-text">Downloading...</span>
+              <span id="model-progress-pct">0%</span>
+            </div>
+            <div
+              style="
+                width: 100%;
+                height: 4px;
+                background: rgba(0, 243, 255, 0.1);
+                border-radius: 2px;
+                overflow: hidden;
+              "
+            >
+              <div
+                id="model-progress-bar"
+                style="
+                  width: 0%;
+                  height: 100%;
+                  background: var(--cyan);
+                  transition: width 0.3s ease;
+                "
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 id="setting-grp-theme">▸ APPEARANCE</h3>
+
+          <div class="setting-item">
+            <div>
+              <div class="setting-label" id="lbl-theme-action">Capture Theme</div>
+              <div class="setting-desc" id="desc-theme-action">
+                Visual theme for the OCR capture overlay and Data Pad
+              </div>
+            </div>
+            <select id="setting-theme-action">
+              <option value="cyberpunk">Cyberpunk (Neon Liquid)</option>
+              <option value="stealth">Stealth (Dark Ops)</option>
+              <option value="ocean">Ocean (Deep Blue)</option>
+              <option value="ember">Ember (Warm Glow)</option>
+              <option value="minimal">Minimal (Clean Glass)</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <div class="setting-label" id="lbl-distortion">Distortion Intensity</div>
+              <div class="setting-desc" id="desc-distortion">
+                Strength of the liquid distortion effect during OCR. Set to 0 to disable.
+              </div>
+            </div>
+            <div class="slider-container">
+              <input type="range" id="setting-distortion" min="0" max="2" step="0.1" value="0.1" />
+              <span class="slider-value" id="val-distortion">0.1</span>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <div class="setting-label" id="lbl-theme-studio">Studio Theme</div>
+              <div class="setting-desc" id="desc-theme-studio">
+                Theme for this dashboard interface
+              </div>
+            </div>
+            <select id="setting-theme-studio">
+              <option value="pro_dark">Terminal Dark</option>
+              <option value="midnight">Midnight Blue</option>
+              <option value="hacker">Hacker Green</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 id="setting-grp-history">▸ HISTORY & STORAGE</h3>
+
+          <div class="setting-item">
+            <div>
+              <div class="setting-label" id="lbl-history-limit">History Limit</div>
+              <div class="setting-desc" id="desc-history-limit">
+                Maximum number of recent OCR results to keep (10 – 9999).
+              </div>
+            </div>
+            <input type="number" id="setting-history-limit" min="10" max="9999" value="100" />
+          </div>
+
+          <div
+            class="setting-item"
+            style="flex-direction: column; align-items: stretch; gap: 12px; border-bottom: none"
+          >
+            <div class="setting-desc" id="desc-export-location">
+              Export downloads a JSON file with text results and source images.
+            </div>
+            <div style="display: flex; gap: 10px">
+              <button
+                id="btn-export-history"
+                class="btn btn-primary"
+                style="flex: 1; padding: 10px"
+              >
+                📦 <span id="lbl-export-history">EXPORT_HISTORY</span>
+              </button>
+              <button id="btn-clear-history" class="btn btn-danger" style="flex: 1; padding: 10px">
+                🗑 <span id="lbl-clear-history">CLEAR_ALL</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 24px">
+          <a href="https://github.com/miaoston/OCRMeow" target="_blank" class="github-link">
+            🐱 GITHUB://OPEN_SOURCE
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/dashboard/index.ts"></script>
+  </body>
+</html>

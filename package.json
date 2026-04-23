@@ -1,0 +1,32 @@
+{
+  "name": "ocrmeow",
+  "version": "0.1.0",
+  "description": "3D Liquid Glassmorphism OCR Chrome Extension",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run check && vite build",
+    "check": "npm run check-try-catch && npm run format && npm run lint && npm run type-check",
+    "check-try-catch": "if grep -rn 'catch (' src; then echo '\\n\\n❌ ERROR: try-catch is strictly forbidden by GEMINI.md! Let errors bubble up.\\n\\n'; exit 1; else echo '✅ try-catch check passed.'; fi",
+    "format": "oxfmt . --ignore-path .gitignore",
+    "lint": "oxlint . --ignore-path .gitignore",
+    "type-check": "tsc --noEmit",
+    "preview": "vite preview",
+    "test:ocr": "node tests/run_ocr_test.js"
+  },
+  "dependencies": {
+    "@paddleocr/paddleocr-js": "^0.3.2",
+    "idb": "^8.0.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "@types/chrome": "^0.1.40",
+    "oxfmt": "latest",
+    "oxlint": "latest",
+    "puppeteer-core": "^24.42.0",
+    "sirv": "^3.0.2",
+    "sirv-cli": "^3.0.1",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}
