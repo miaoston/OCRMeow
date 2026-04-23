@@ -200,8 +200,88 @@ const i18n = {
     "lbl-url-rec": "识别模型下载地址 (rec.tar)",
     "desc-url-rec": "高阶：您可以覆盖默认的官方下载源。",
     "btn-download-models": "初始化模型",
+    "wizard-title": "AI_CORE://初始化引导",
+    "wizard-desc":
+      "欢迎使用 OCRMeow。为了实现 100% 纯本地离线识别，我们需要将 AI 核心（约 22MB）同步到您的浏览器本地数据库。此操作仅需执行一次。",
+    "wizard-btn": "启动赛博核心 (同步模型)",
+    "wizard-loading": "正在同步神经网络...",
   },
 };
+
+/**
+ * Show a setup wizard for Web Mode if models are missing.
+ */
+function showSetupWizard(): Promise<void> {
+  const isZh = getLang() === "zh";
+  const dict = isZh ? i18n.zh : (i18n as any).en;
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.style.backdropFilter = "blur(12px)";
+
+    overlay.innerHTML = `
+      <div class="modal-box" style="width: 480px; border-color: var(--magenta); box-shadow: 0 0 40px var(--magenta-dim);">
+        <div class="modal-scanline" style="background: linear-gradient(90deg, transparent, var(--magenta-dim), transparent);"></div>
+        <div class="modal-header" style="background: rgba(255, 0, 255, 0.05);">
+          <div class="modal-led" style="background: var(--magenta); box-shadow: 0 0 10px var(--magenta);"></div>
+          <div class="modal-title" style="color: var(--magenta); text-shadow: 0 0 8px var(--magenta-dim);">${dict["wizard-title"]}</div>
+        </div>
+        <div class="modal-body">
+          <div style="font-size: 32px; margin-bottom: 20px;">🐱</div>
+          <p style="letter-spacing: 0.5px; line-height: 1.8;">${dict["wizard-desc"]}</p>
+          
+          <div id="wizard-progress-area" style="display: none; margin-top: 24px;">
+            <div style="font-size: 10px; color: var(--magenta); display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span id="wizard-progress-text">${dict["wizard-loading"]}</span>
+              <span id="wizard-progress-pct">0%</span>
+            </div>
+            <div style="width: 100%; height: 4px; background: rgba(255, 0, 255, 0.1); border-radius: 2px; overflow: hidden;">
+              <div id="wizard-progress-bar" style="width: 0%; height: 100%; background: var(--magenta); transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions" id="wizard-actions">
+          <button class="btn btn-confirm" id="btn-wizard-start" style="background: var(--magenta-dim); color: var(--magenta); border-color: var(--magenta); flex: 1; padding: 12px;">
+            ${dict["wizard-btn"]}
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const btn = overlay.querySelector("#btn-wizard-start") as HTMLButtonElement;
+    const progressArea = overlay.querySelector("#wizard-progress-area") as HTMLElement;
+    const progressBar = overlay.querySelector("#wizard-progress-bar") as HTMLElement;
+    const progressPct = overlay.querySelector("#wizard-progress-pct") as HTMLElement;
+
+    btn.addEventListener("click", () => {
+      btn.style.display = "none";
+      progressArea.style.display = "block";
+
+      downloadModels().then(() => {
+        setTimeout(() => {
+          overlay.remove();
+          resolve();
+        }, 1000);
+      });
+
+      const originalBar = document.getElementById("model-progress-bar");
+      const originalPct = document.getElementById("model-progress-pct");
+
+      const timer = setInterval(() => {
+        if (originalBar && originalPct) {
+          const width = originalBar.style.width;
+          const text = originalPct.textContent;
+          progressBar.style.width = width;
+          progressPct.textContent = text;
+          if (width === "100%") clearInterval(timer);
+        }
+      }, 100);
+    });
+  });
+}
 
 // ─── Initialize ────────────────────────────────────────────────────
 
@@ -247,6 +327,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupPaste();
   setupSettingsListeners();
   await loadHistoryView();
+
+  // Automatic Wizard for Web Mode
+  if (IS_WEB_MODE) {
+    const det = await getAsset("det.tar");
+    const rec = await getAsset("rec.tar");
+    if (!det || !rec) {
+      showSetupWizard().then(() => {
+        checkModelStatus();
+      });
+    } else {
+      checkModelStatus();
+    }
+  } else {
+    checkModelStatus();
+  }
 });
 
 // ─── Navigation ────────────────────────────────────────────────────
