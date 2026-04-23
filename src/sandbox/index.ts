@@ -54,11 +54,15 @@ window.addEventListener("message", async (event) => {
   }
 
   if (action === "RUN_OCR") {
+    console.log("OCRMeow Sandbox: Starting OCR Prediction...");
     initOCR()
       .then(async (ocr) => {
+        console.log("OCRMeow Sandbox: Engine Ready. Fetching Image...");
         const response = await fetch(payload.image);
         const blob = await response.blob();
+        console.log("OCRMeow Sandbox: Running Prediction...");
         const results = await ocr.predict(blob);
+        console.log("OCRMeow Sandbox: Prediction Success.");
         window.parent.postMessage(
           {
             action: "OCR_RESULT",
@@ -73,7 +77,7 @@ window.addEventListener("message", async (event) => {
         window.parent.postMessage(
           {
             action: "OCR_RESULT",
-            error: error.message || "Unknown OCR Error",
+            error: error.message || String(error),
             requestId,
           },
           "*",

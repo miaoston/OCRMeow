@@ -813,10 +813,17 @@ async function performOCR(dataUrl: string): Promise<any[]> {
       const listener = (event: MessageEvent) => {
         if (event.data.action === "OCR_RESULT" && event.data.requestId === requestId) {
           window.removeEventListener("message", listener);
+          clearTimeout(timeout);
           if (event.data.error) reject(new Error(event.data.error));
           else resolve(event.data.payload?.items || event.data.payload || []);
         }
       };
+
+      // Safety timeout: 60s
+      const timeout = setTimeout(() => {
+        window.removeEventListener("message", listener);
+        reject(new Error("OCR_ENGINE_TIMEOUT"));
+      }, 60000);
 
       window.addEventListener("message", listener);
       sandbox.contentWindow?.postMessage(
@@ -868,18 +875,26 @@ async function checkModelStatus() {
       // Initialize Web Mode Sandbox if applicable
       if (IS_WEB_MODE) {
         const sandbox = document.getElementById("ocr-sandbox") as HTMLIFrameElement;
-        if (sandbox && sandbox.contentWindow) {
-          sandbox.contentWindow.postMessage(
-            {
-              action: "INIT_CONFIG",
-              payload: {
-                detBlob,
-                recBlob,
-                wasmPath: "/wasm/", // In Github Pages, WASM is served from /wasm/
+        if (sandbox) {
+          const sendInit = () => {
+            sandbox.contentWindow?.postMessage(
+              {
+                action: "INIT_CONFIG",
+                payload: {
+                  detBlob,
+                  recBlob,
+                  wasmPath: "wasm/", // Use simple relative path
+                },
               },
-            },
-            "*",
-          );
+              "*",
+            );
+          };
+
+          if (sandbox.contentWindow && sandbox.contentDocument?.readyState === "complete") {
+            sendInit();
+          } else {
+            sandbox.onload = sendInit;
+          }
         }
       }
     } else {
