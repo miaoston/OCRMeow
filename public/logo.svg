@@ -1,0 +1,72 @@
+<svg width="200" height="200" viewBox="20 25 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Premium Neon Glow -->
+    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <!-- Cyber Visor Gradient -->
+    <linearGradient id="visor-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00f3ff;stop-opacity:0.3" />
+      <stop offset="50%" style="stop-color:#00f3ff;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#00f3ff;stop-opacity:0.3" />
+    </linearGradient>
+
+    <!-- Glass Highlight -->
+    <linearGradient id="glass-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0" />
+      <stop offset="45%" style="stop-color:#ffffff;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0.4" />
+      <stop offset="55%" style="stop-color:#ffffff;stop-opacity:0" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+
+
+
+  <!-- ClipPath for Visor -->
+  <defs>
+    <clipPath id="visor-clip">
+      <rect x="40" y="80" width="120" height="40" rx="4" />
+    </clipPath>
+  </defs>
+
+  <!-- The Cyber Cat Head (Geometric & Sleek) -->
+  <g stroke="#00f3ff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#neon-glow)">
+    <!-- Ears -->
+    <path d="M60 70 L40 30 L85 55" />
+    <path d="M140 70 L160 30 L115 55" />
+    
+    <!-- Main Face Outline (Lower) -->
+    <path d="M45 100 L60 160 L100 180 L140 160 L155 100" />
+    
+    <!-- The Visor (The 'Cool' Element) -->
+    <rect x="40" y="80" width="120" height="40" rx="4" fill="url(#visor-grad)" stroke-width="2" />
+    
+    <!-- Eyes inside Visor -->
+    <path d="M65 100 L85 100" stroke-width="4" opacity="0.8" />
+    <path d="M115 100 L135 100" stroke-width="4" opacity="0.8" />
+    
+    <!-- Nose/Whiskers stylized -->
+    <path d="M90 140 L100 150 L110 140" stroke-width="2" />
+    <path d="M30 130 L60 135" stroke-width="1.5" opacity="0.4" />
+    <path d="M170 130 L140 135" stroke-width="1.5" opacity="0.4" />
+  </g>
+
+  <!-- Glass Shine Animation (Clipped to Visor) -->
+  <g clip-path="url(#visor-clip)">
+    <rect x="-100" y="80" width="100" height="40" fill="url(#glass-shine)">
+      <animate attributeName="x" from="-100" to="200" dur="3s" repeatCount="indefinite" />
+    </rect>
+  </g>
+
+  <!-- Circuit Accents (Cyberpunk detail) -->
+
+  <circle cx="150" cy="45" r="3" fill="#00f3ff" filter="url(#neon-glow)">
+    <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="50" cy="45" r="3" fill="#00f3ff" filter="url(#neon-glow)">
+    <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
+  </circle>
+</svg>
