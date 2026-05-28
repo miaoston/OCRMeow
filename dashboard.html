@@ -979,51 +979,42 @@
             style="flex-direction: column; align-items: flex-start; gap: 8px"
           >
             <div>
-              <div class="setting-label" id="lbl-url-det">Detection Model URL (det.tar)</div>
-              <div class="setting-desc" id="desc-url-det">
-                Advanced: Override the default download source.
+              <div class="setting-label" id="lbl-manual-download">Manual Download Links</div>
+              <div class="setting-desc" id="desc-manual-download">
+                If the online initialization fails or is slow, download the model files directly
+                using your browser, then click "Import Local Files" above.
               </div>
             </div>
-            <input
-              type="text"
-              id="setting-url-det"
-              value="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar"
+            <div
               style="
-                width: 100%;
-                background: var(--bg-card);
-                color: var(--text-primary);
-                border: 1px solid #333;
-                padding: 6px 10px;
                 font-family: monospace;
                 font-size: 11px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                width: 100%;
+                word-break: break-all;
               "
-            />
-          </div>
-
-          <div
-            class="setting-item"
-            style="flex-direction: column; align-items: flex-start; gap: 8px"
-          >
-            <div>
-              <div class="setting-label" id="lbl-url-rec">Recognition Model URL (rec.tar)</div>
-              <div class="setting-desc" id="desc-url-rec">
-                Advanced: Override the default download source.
+            >
+              <div>
+                <span style="color: var(--magenta)">[ DET ]</span>
+                <a
+                  href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar"
+                  target="_blank"
+                  style="color: var(--cyan); text-decoration: underline; letter-spacing: 0.5px"
+                  >det.tar (PP-OCRv5 检测模型)</a
+                >
+              </div>
+              <div>
+                <span style="color: var(--magenta)">[ REC ]</span>
+                <a
+                  href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar"
+                  target="_blank"
+                  style="color: var(--cyan); text-decoration: underline; letter-spacing: 0.5px"
+                  >rec.tar (PP-OCRv5 识别模型)</a
+                >
               </div>
             </div>
-            <input
-              type="text"
-              id="setting-url-rec"
-              value="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar"
-              style="
-                width: 100%;
-                background: var(--bg-card);
-                color: var(--text-primary);
-                border: 1px solid #333;
-                padding: 6px 10px;
-                font-family: monospace;
-                font-size: 11px;
-              "
-            />
           </div>
           <div id="model-download-progress" style="display: none; margin-top: 10px">
             <div

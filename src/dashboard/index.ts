@@ -184,10 +184,10 @@ const i18n = {
     "lbl-model-status": "Local Models Status",
     "desc-model-status":
       "AI Models are not bundled to save space. They must be downloaded to your local database once.",
-    "lbl-url-det": "Detection Model URL (det.tar)",
-    "desc-url-det": "Advanced: Override the default download source.",
-    "lbl-url-rec": "Recognition Model URL (rec.tar)",
-    "desc-url-rec": "Advanced: Override the default download source.",
+    "btn-import-models": "📦 IMPORT_LOCAL_FILES",
+    "lbl-manual-download": "Manual Download Links",
+    "desc-manual-download":
+      "If online initialization fails or is slow, download the model files directly using your browser, then click 'Import Local Files' above.",
     "btn-download-models": "INITIALIZE_MODELS",
     "wizard-title": "AI_CORE://INITIALIZATION_WIZARD",
     "wizard-desc":
@@ -231,10 +231,10 @@ const i18n = {
     "setting-grp-models": "▸ AI 模型管理",
     "lbl-model-status": "本地模型状态",
     "desc-model-status": "为缩减插件体积，大模型不再打包进插件中。您需要首次运行并在本地缓存它们。",
-    "lbl-url-det": "检测模型下载地址 (det.tar)",
-    "desc-url-det": "高阶：您可以覆盖默认的官方下载源。",
-    "lbl-url-rec": "识别模型下载地址 (rec.tar)",
-    "desc-url-rec": "高阶：您可以覆盖默认的官方下载源。",
+    "btn-import-models": "📦 本地导入模型",
+    "lbl-manual-download": "手动下载链接",
+    "desc-manual-download":
+      "如果在线同步失败或较慢，您可以使用浏览器直接下载模型文件，然后点击上方的“本地导入模型”直接加载。",
     "btn-download-models": "初始化模型",
     "wizard-title": "AI_CORE://初始化引导",
     "wizard-desc":
@@ -1237,11 +1237,8 @@ async function downloadModels() {
   const progressPct = document.getElementById("model-progress-pct");
   const progressBar = document.getElementById("model-progress-bar");
 
-  const detInput = document.getElementById("setting-url-det") as HTMLInputElement;
-  const recInput = document.getElementById("setting-url-rec") as HTMLInputElement;
-
-  const detUrl = detInput?.value.trim() || DEFAULT_MODEL_URLS.det;
-  const recUrl = recInput?.value.trim() || DEFAULT_MODEL_URLS.rec;
+  const detUrl = DEFAULT_MODEL_URLS.det;
+  const recUrl = DEFAULT_MODEL_URLS.rec;
 
   if (btn) btn.disabled = true;
   if (progressDiv) progressDiv.style.display = "block";
@@ -1276,7 +1273,7 @@ async function downloadModels() {
     .catch(async (err: any) => {
       console.error("Model download error:", err);
       await showModal(
-        `${isZh ? "下载失败：" : "Download failed: "} ${err.message}\n\n${isZh ? "请检查自定义的下载链接是否正确，或检查网络环境后重试。" : "Please check your network or custom URLs and try again."}`,
+        `${isZh ? "下载失败：" : "Download failed: "} ${err.message}\n\n${isZh ? "请检查您的网络连接或尝试手动下载并导入模型。" : "Please check your network connection or try downloading and importing the models manually."}`,
         "❌ ERROR",
       );
     })
@@ -1297,11 +1294,8 @@ async function downloadModelsAndRunOCR(base64Image: string, sourceName: string) 
   const progressPct = document.getElementById("model-progress-pct");
   const progressBar = document.getElementById("model-progress-bar");
 
-  const detInput = document.getElementById("setting-url-det") as HTMLInputElement;
-  const recInput = document.getElementById("setting-url-rec") as HTMLInputElement;
-
-  const detUrl = detInput?.value.trim() || DEFAULT_MODEL_URLS.det;
-  const recUrl = recInput?.value.trim() || DEFAULT_MODEL_URLS.rec;
+  const detUrl = DEFAULT_MODEL_URLS.det;
+  const recUrl = DEFAULT_MODEL_URLS.rec;
 
   if (btn) btn.disabled = true;
   if (progressDiv) progressDiv.style.display = "block";
@@ -1338,7 +1332,7 @@ async function downloadModelsAndRunOCR(base64Image: string, sourceName: string) 
     .catch(async (err: any) => {
       console.error("Auto model download error:", err);
       await showModal(
-        `${isZh ? "下载失败：" : "Download failed: "} ${err.message}\n\n${isZh ? "请检查自定义的下载链接是否正确，或检查网络环境后重试。" : "Please check your network or custom URLs and try again."}`,
+        `${isZh ? "下载失败：" : "Download failed: "} ${err.message}\n\n${isZh ? "请检查您的网络连接或尝试手动下载并导入模型。" : "Please check your network connection or try downloading and importing the models manually."}`,
         "❌ ERROR",
       );
     })
