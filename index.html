@@ -953,36 +953,90 @@
                   style="
                     display: flex;
                     justify-content: space-between;
-                    padding: 4px 0;
+                    align-items: center;
+                    padding: 6px 0;
                     border-bottom: 1px solid rgba(0, 243, 255, 0.1);
                     position: relative;
                   "
                 >
-                  <span style="color: var(--text-dim); letter-spacing: 1px">[ DET_CORE_v5 ]</span>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="color: var(--text-dim); letter-spacing: 1px">[ DET_CORE_v5 ]</span>
+                    <a
+                      id="lbl-download-det-official"
+                      href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar"
+                      target="_blank"
+                      style="
+                        color: var(--cyan);
+                        text-decoration: underline;
+                        font-size: 10px;
+                        opacity: 0.7;
+                        transition: opacity 0.2s;
+                      "
+                      onmouseover="this.style.opacity = '1'"
+                      onmouseout="this.style.opacity = '0.7'"
+                      >[ 官方源 ]</a
+                    >
+                    <a
+                      id="lbl-download-det-backup"
+                      href="https://github.com/miaoston/ORCMeow/releases"
+                      target="_blank"
+                      style="
+                        color: var(--cyan);
+                        text-decoration: underline;
+                        font-size: 10px;
+                        opacity: 0.7;
+                        transition: opacity 0.2s;
+                      "
+                      onmouseover="this.style.opacity = '1'"
+                      onmouseout="this.style.opacity = '0.7'"
+                      >[ 备用源 ]</a
+                    >
+                  </div>
                   <span id="status-det" style="color: var(--red); font-weight: bold">MISSING</span>
                 </div>
                 <div
                   style="
                     display: flex;
                     justify-content: space-between;
-                    padding: 4px 0;
-                    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+                    align-items: center;
+                    padding: 6px 0;
                     position: relative;
                   "
                 >
-                  <span style="color: var(--text-dim); letter-spacing: 1px">[ REC_CORE_v5 ]</span>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="color: var(--text-dim); letter-spacing: 1px">[ REC_CORE_v5 ]</span>
+                    <a
+                      id="lbl-download-rec-official"
+                      href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar"
+                      target="_blank"
+                      style="
+                        color: var(--cyan);
+                        text-decoration: underline;
+                        font-size: 10px;
+                        opacity: 0.7;
+                        transition: opacity 0.2s;
+                      "
+                      onmouseover="this.style.opacity = '1'"
+                      onmouseout="this.style.opacity = '0.7'"
+                      >[ 官方源 ]</a
+                    >
+                    <a
+                      id="lbl-download-rec-backup"
+                      href="https://github.com/miaoston/ORCMeow/releases"
+                      target="_blank"
+                      style="
+                        color: var(--cyan);
+                        text-decoration: underline;
+                        font-size: 10px;
+                        opacity: 0.7;
+                        transition: opacity 0.2s;
+                      "
+                      onmouseover="this.style.opacity = '1'"
+                      onmouseout="this.style.opacity = '0.7'"
+                      >[ 备用源 ]</a
+                    >
+                  </div>
                   <span id="status-rec" style="color: var(--red); font-weight: bold">MISSING</span>
-                </div>
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 4px 0;
-                    position: relative;
-                  "
-                >
-                  <span style="color: var(--text-dim); letter-spacing: 1px">[ FS_LOCATION ]</span>
-                  <span id="storage-path" style="color: var(--cyan)">INDEXED_DB://INTERNAL</span>
                 </div>
               </div>
             </div>
@@ -1013,48 +1067,6 @@
             </div>
           </div>
 
-          <div
-            class="setting-item"
-            style="flex-direction: column; align-items: flex-start; gap: 8px"
-          >
-            <div>
-              <div class="setting-label" id="lbl-manual-download">Manual Download Links</div>
-              <div class="setting-desc" id="desc-manual-download">
-                If the online initialization fails or is slow, download the model files directly
-                using your browser, then click "Import Local Files" above.
-              </div>
-            </div>
-            <div
-              style="
-                font-family: monospace;
-                font-size: 11px;
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                width: 100%;
-                word-break: break-all;
-              "
-            >
-              <div>
-                <span style="color: var(--magenta)">[ DET ]</span>
-                <a
-                  href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar"
-                  target="_blank"
-                  style="color: var(--cyan); text-decoration: underline; letter-spacing: 0.5px"
-                  >det.tar (PP-OCRv5 检测模型)</a
-                >
-              </div>
-              <div>
-                <span style="color: var(--magenta)">[ REC ]</span>
-                <a
-                  href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar"
-                  target="_blank"
-                  style="color: var(--cyan); text-decoration: underline; letter-spacing: 0.5px"
-                  >rec.tar (PP-OCRv5 识别模型)</a
-                >
-              </div>
-            </div>
-          </div>
           <div id="model-download-progress" style="display: none; margin-top: 10px">
             <div
               style="

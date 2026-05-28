@@ -185,9 +185,10 @@ const i18n = {
     "desc-model-status":
       "AI Models are not bundled to save space. They must be downloaded to your local database once.",
     "btn-import-models": "📦 IMPORT_LOCAL_FILES",
-    "lbl-manual-download": "Manual Download Links",
-    "desc-manual-download":
-      "If online initialization fails or is slow, download the model files directly using your browser, then click 'Import Local Files' above.",
+    "lbl-download-det-official": "[ Official ]",
+    "lbl-download-det-backup": "[ Backup ]",
+    "lbl-download-rec-official": "[ Official ]",
+    "lbl-download-rec-backup": "[ Backup ]",
     "btn-download-models": "INITIALIZE_MODELS",
     "wizard-title": "AI_CORE://INITIALIZATION_WIZARD",
     "wizard-desc":
@@ -232,9 +233,10 @@ const i18n = {
     "lbl-model-status": "本地模型状态",
     "desc-model-status": "为缩减插件体积，大模型不再打包进插件中。您需要首次运行并在本地缓存它们。",
     "btn-import-models": "📦 本地导入模型",
-    "lbl-manual-download": "手动下载链接",
-    "desc-manual-download":
-      "如果在线同步失败或较慢，您可以使用浏览器直接下载模型文件，然后点击上方的“本地导入模型”直接加载。",
+    "lbl-download-det-official": "[ 官方源 ]",
+    "lbl-download-det-backup": "[ 备用源 ]",
+    "lbl-download-rec-official": "[ 官方源 ]",
+    "lbl-download-rec-backup": "[ 备用源 ]",
     "btn-download-models": "初始化模型",
     "wizard-title": "AI_CORE://初始化引导",
     "wizard-desc":
