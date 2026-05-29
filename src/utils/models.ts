@@ -32,6 +32,26 @@ export async function downloadAndCacheModels(
 }
 
 /**
+ * Download and cache a single model to IndexedDB
+ */
+export async function downloadSingleModel(
+  type: "det" | "rec",
+  onProgress?: (phase: string, pct: number) => void,
+) {
+  const url = type === "det" ? DEFAULT_MODEL_URLS.det : DEFAULT_MODEL_URLS.rec;
+  const filename = `${type}.tar`;
+  const label = type === "det" ? "Detection" : "Recognition";
+
+  if (onProgress) onProgress(`Downloading ${label} Model...`, 15);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch ${filename} from ${url}`);
+  const blob = await res.blob();
+  await saveAsset(filename, blob);
+  if (onProgress) onProgress("Done!", 100);
+  return blob;
+}
+
+/**
  * Check if models exist in IndexedDB
  */
 export async function areModelsCached() {

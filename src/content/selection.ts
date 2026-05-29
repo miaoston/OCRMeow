@@ -58,6 +58,7 @@ export function cropImage(
 
 /**
  * Send cropped image to OCR engine via background worker.
+ * After receiving results, explicitly saves to history (the worker is stateless).
  */
 export async function performOCR(dataUrl: string): Promise<any[]> {
   const response = await chrome.runtime.sendMessage({
@@ -69,11 +70,18 @@ export async function performOCR(dataUrl: string): Promise<any[]> {
     throw new Error(response.error);
   }
 
-  if (response && response.items) {
-    return response.items;
+  const items = response && response.items ? response.items : [];
+
+  // Explicitly save history — the background worker is now stateless
+  if (items.length > 0) {
+    const text = items.map((it: any) => it.text).join("\n");
+    chrome.runtime.sendMessage({
+      action: "SAVE_HISTORY",
+      payload: { text, image: dataUrl, source: "Direct Capture" },
+    });
   }
 
-  return [];
+  return items;
 }
 
 /**

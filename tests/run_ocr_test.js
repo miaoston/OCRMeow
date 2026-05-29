@@ -169,7 +169,10 @@ async function runTest() {
     const recStatus = await page.$eval("#status-rec", (el) => el.textContent);
     console.log(`[MODEL STATUS] DET: ${detStatus}, REC: ${recStatus}`);
 
-    if (!detStatus.includes("READY") || !recStatus.includes("READY")) {
+    if (
+      !(detStatus.includes("READY") || detStatus.includes("已就绪")) ||
+      !(recStatus.includes("READY") || recStatus.includes("已就绪"))
+    ) {
       console.error("❌ FAILED: Status indicators did not update to READY.");
       await browser.close();
       server.close();

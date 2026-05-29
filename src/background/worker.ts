@@ -49,6 +49,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === "SAVE_HISTORY") {
+    const { text, image, source } = message.payload;
+    chrome.storage.local.get("ocrSettings").then((settings: any) => {
+      const limit = settings.ocrSettings?.historyLimit
+        ? parseInt(settings.ocrSettings.historyLimit, 10)
+        : 100;
+      saveHistory(text, image, source, limit).then(() => sendResponse({ ok: true }));
+    });
+    return true;
+  }
+
   if (message.action === "SELECTION_DONE") {
     chrome.action.setBadgeText({ text: "", tabId: sender.tab?.id });
     sendResponse({});
@@ -68,22 +79,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * Send OCR request to offscreen document with retry logic.
  * Uses recursive Promise chaining instead of try-catch to comply with project rules.
+ *
+ * This function is intentionally STATELESS — it performs OCR and returns results
+ * without any side-effects. History saving is the caller's responsibility.
  */
 async function handleOCRRequest(payload: any) {
   await setupOffscreen();
 
   const response = await sendWithRetry(payload, 5);
   if (!response) throw new Error("OCR_ENGINE_CONNECTION_FAILED");
-
-  // Save to history automatically
-  if (response && response.items && response.items.length > 0) {
-    const text = response.items.map((it: any) => it.text).join("\n");
-    const settings: any = await chrome.storage.local.get("ocrSettings");
-    const limit = settings.ocrSettings?.historyLimit
-      ? parseInt(settings.ocrSettings.historyLimit, 10)
-      : 100;
-    await saveHistory(text, payload.image, "Direct Capture", limit);
-  }
 
   return response;
 }

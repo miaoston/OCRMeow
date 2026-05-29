@@ -4,783 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🐱 Open OCRMeow Studio</title>
-    <style>
-      /* ─── Design Tokens ─────────────────────────────────── */
-      :root {
-        --bg: #08090c;
-        --bg-surface: #0c0d11;
-        --bg-elevated: #101218;
-        --cyan: #00f3ff;
-        --cyan-dim: rgba(0, 243, 255, 0.15);
-        --cyan-ghost: rgba(0, 243, 255, 0.06);
-        --magenta: #ff00ff;
-        --magenta-dim: rgba(255, 0, 255, 0.12);
-        --border: rgba(0, 243, 255, 0.1);
-        --border-bright: rgba(0, 243, 255, 0.3);
-        --text: #e0e4e8;
-        --text-dim: rgba(255, 255, 255, 0.4);
-        --red: #ff4455;
-        --green: #00ff88;
-        --font: "Fira Code", "Cascadia Code", "SF Mono", "Consolas", monospace;
-      }
-
-      /* ─── Reset & Base ──────────────────────────────────── */
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        background: var(--bg);
-        color: var(--text);
-        font-family: var(--font);
-        display: flex;
-        height: 100vh;
-        overflow: hidden;
-        font-size: 13px;
-        line-height: 1.6;
-      }
-
-      /* ─── Scanline Overlay (full page) ──────────────────── */
-      body::after {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 9999;
-        background: repeating-linear-gradient(
-          0deg,
-          transparent,
-          transparent 2px,
-          rgba(0, 0, 0, 0.03) 2px,
-          rgba(0, 0, 0, 0.03) 4px
-        );
-      }
-
-      /* ─── Sidebar ───────────────────────────────────────── */
-      .sidebar {
-        width: 240px;
-        background: var(--bg-surface);
-        border-right: 1px solid var(--border);
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 24px 20px;
-        font-size: 13px;
-        font-weight: 900;
-        color: var(--cyan);
-        letter-spacing: 2px;
-        border-bottom: 1px solid var(--border);
-        text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
-      }
-      .brand-led {
-        width: 8px;
-        height: 8px;
-        background: var(--cyan);
-        border-radius: 1px;
-        box-shadow: 0 0 8px var(--cyan);
-        animation: led-pulse 2s ease-in-out infinite;
-      }
-      @keyframes led-pulse {
-        0%,
-        100% {
-          opacity: 1;
-          box-shadow: 0 0 8px var(--cyan);
-        }
-        50% {
-          opacity: 0.5;
-          box-shadow: 0 0 3px var(--cyan);
-        }
-      }
-
-      .nav-menu {
-        display: flex;
-        flex-direction: column;
-        padding: 12px 0;
-        gap: 2px;
-      }
-      .nav-item {
-        padding: 12px 20px;
-        cursor: pointer;
-        color: var(--text-dim);
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        font-size: 11px;
-        letter-spacing: 1.5px;
-        border-left: 3px solid transparent;
-        user-select: none;
-      }
-      .nav-item:hover {
-        background: var(--cyan-ghost);
-        color: var(--text);
-        transform: translateX(4px);
-      }
-      .nav-item.active {
-        background: var(--cyan-dim);
-        color: var(--cyan);
-        border-left-color: var(--cyan);
-      }
-
-      /* Sidebar footer hex decoration */
-      .sidebar-footer {
-        margin-top: auto;
-        padding: 16px 20px;
-        border-top: 1px solid var(--border);
-        font-size: 8px;
-        color: rgba(0, 243, 255, 0.15);
-        letter-spacing: 2px;
-        word-break: break-all;
-        line-height: 1.8;
-      }
-      .github-sidebar-btn {
-        display: block;
-        width: 100%;
-        text-align: center;
-        padding: 8px 12px;
-        margin-bottom: 12px;
-        box-sizing: border-box;
-        font-family: "Fira Code", monospace;
-        font-size: 10px;
-        font-weight: bold;
-        letter-spacing: 1px;
-        color: var(--cyan);
-        background: rgba(0, 243, 255, 0.05);
-        border: 1px solid rgba(0, 243, 255, 0.2);
-        border-radius: 4px;
-        text-decoration: none;
-        transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-        text-shadow: 0 0 4px rgba(0, 243, 255, 0.4);
-      }
-      .github-sidebar-btn:hover {
-        color: #000;
-        background: var(--cyan);
-        box-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
-        border-color: var(--cyan);
-        transform: translateY(-1px);
-        text-shadow: none;
-      }
-
-      /* ─── Main Content ──────────────────────────────────── */
-      .main-content {
-        flex: 1;
-        padding: 0;
-        overflow-y: auto;
-        position: relative;
-        background: var(--bg);
-      }
-      .main-content::-webkit-scrollbar {
-        width: 6px;
-      }
-      .main-content::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .main-content::-webkit-scrollbar-thumb {
-        background: rgba(0, 243, 255, 0.15);
-        border-radius: 3px;
-      }
-
-      .view-section {
-        display: none;
-        padding: 32px 40px;
-        animation: fadeIn 0.3s ease;
-      }
-      .view-section.active {
-        display: block;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* ─── Page Headers ──────────────────────────────────── */
-      .page-header {
-        margin-bottom: 32px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
-      }
-      .page-header h1 {
-        font-size: 18px;
-        font-weight: 900;
-        letter-spacing: 3px;
-        color: var(--cyan);
-        text-shadow: 0 0 12px rgba(0, 243, 255, 0.2);
-        margin-bottom: 6px;
-      }
-      .page-header .subtitle {
-        color: var(--text-dim);
-        font-size: 11px;
-        letter-spacing: 1px;
-      }
-
-      /* ─── Dropzone ──────────────────────────────────────── */
-      .dropzone {
-        border: 2px dashed var(--border);
-        border-radius: 2px;
-        padding: 48px 32px;
-        text-align: center;
-        background: var(--bg-surface);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        margin-bottom: 24px;
-        position: relative;
-        overflow: hidden;
-      }
-      .dropzone::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-        animation: dropzone-scan 3s linear infinite;
-      }
-      @keyframes dropzone-scan {
-        0% {
-          left: -100%;
-        }
-        100% {
-          left: 100%;
-        }
-      }
-      .dropzone:hover,
-      .dropzone.dragover {
-        border-color: var(--cyan);
-        background: var(--cyan-ghost);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(0, 243, 255, 0.08);
-      }
-      .dropzone-icon {
-        font-size: 2.5rem;
-        margin-bottom: 12px;
-        opacity: 0.7;
-      }
-
-      /* ─── Result Cards ──────────────────────────────────── */
-      .result-card {
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: 2px;
-        padding: 0;
-        margin-top: 16px;
-        transition: all 0.3s ease;
-        overflow: hidden;
-      }
-      .result-card:hover {
-        border-color: var(--border-bright);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      }
-      .result-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
-        background: var(--cyan-ghost);
-        border-bottom: 1px solid var(--border);
-        font-size: 11px;
-        color: var(--text-dim);
-      }
-      .result-header-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .result-header-actions {
-        display: flex;
-        gap: 8px;
-      }
-      .result-image-container {
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        background: rgba(0, 0, 0, 0.2);
-      }
-      .result-image {
-        max-width: 100%;
-        max-height: 180px;
-        border-radius: 2px;
-        border: 1px solid var(--border);
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: block;
-      }
-      .result-image:hover {
-        border-color: var(--cyan);
-        box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
-      }
-      .result-text {
-        font-family: var(--font);
-        font-size: 12px;
-        line-height: 1.8;
-        white-space: pre-wrap;
-        background: rgba(0, 0, 0, 0.3);
-        padding: 16px;
-        color: var(--cyan);
-        outline: none;
-        border: none;
-      }
-      .result-text:focus {
-        background: rgba(0, 0, 0, 0.5);
-      }
-      .result-timing {
-        font-size: 9px;
-        color: var(--green);
-        letter-spacing: 1px;
-      }
-
-      /* ─── Buttons ────────────────────────────────────────── */
-      .btn {
-        border-radius: 2px;
-        cursor: pointer;
-        font-weight: 700;
-        font-family: var(--font);
-        font-size: 10px;
-        letter-spacing: 1px;
-        transition: all 0.2s ease;
-        outline: none;
-        border: 1px solid var(--border);
-        background: transparent;
-        color: var(--text-dim);
-        padding: 6px 12px;
-      }
-      .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 243, 255, 0.15);
-        color: var(--cyan);
-        border-color: var(--cyan);
-      }
-      .btn:active {
-        transform: translateY(0) scale(0.97);
-      }
-      .btn-primary {
-        background: var(--cyan-dim);
-        color: var(--cyan);
-        border-color: var(--cyan);
-      }
-      .btn-primary:hover {
-        background: rgba(0, 243, 255, 0.25);
-      }
-      .btn-danger {
-        color: var(--red);
-        border-color: rgba(255, 68, 85, 0.3);
-      }
-      .btn-danger:hover {
-        background: rgba(255, 68, 85, 0.1);
-        border-color: var(--red);
-        box-shadow: 0 4px 12px rgba(255, 68, 85, 0.15);
-        color: var(--red);
-      }
-
-      /* ─── Modal Dialog ───────────────────────────────────── */
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(6px);
-        z-index: 99999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: modal-fade-in 0.2s ease;
-      }
-      @keyframes modal-fade-in {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-      @keyframes modal-slide-in {
-        from {
-          opacity: 0;
-          transform: translateY(-20px) scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-      }
-      .modal-box {
-        background: linear-gradient(170deg, #0d0e12 0%, #0a0b0d 40%, #080a0c 100%);
-        border: 2px solid var(--cyan);
-        border-radius: 2px;
-        width: 420px;
-        max-width: 90vw;
-        box-shadow:
-          0 0 60px rgba(0, 0, 0, 0.9),
-          0 0 30px var(--cyan-dim),
-          inset 0 0 20px var(--cyan-ghost);
-        font-family: var(--font);
-        overflow: hidden;
-        animation: modal-slide-in 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        position: relative;
-      }
-      .modal-scanline {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
-        z-index: 1;
-        pointer-events: none;
-        animation: ocrmeow-scanline 4s linear infinite;
-      }
-      @keyframes ocrmeow-scanline {
-        0% {
-          transform: translateY(-100%);
-        }
-        100% {
-          transform: translateY(600px);
-        }
-      }
-      .modal-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--border);
-        background: var(--cyan-ghost);
-      }
-      .modal-led {
-        width: 6px;
-        height: 6px;
-        border-radius: 1px;
-        background: var(--cyan);
-        animation: led-pulse 2s ease-in-out infinite;
-      }
-      @keyframes led-pulse {
-        0%,
-        100% {
-          opacity: 1;
-          box-shadow: 0 0 6px currentColor;
-        }
-        50% {
-          opacity: 0.5;
-          box-shadow: 0 0 2px currentColor;
-        }
-      }
-      .modal-title {
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 2px;
-        color: var(--cyan);
-        text-shadow: 0 0 8px var(--cyan-dim);
-      }
-      .modal-body {
-        padding: 24px 20px;
-        font-size: 13px;
-        line-height: 1.8;
-        color: var(--text);
-      }
-      .modal-body .modal-icon {
-        font-size: 28px;
-        display: block;
-        margin-bottom: 12px;
-      }
-      .modal-actions {
-        display: flex;
-        gap: 10px;
-        padding: 12px 20px 18px 20px;
-      }
-      .modal-actions .btn {
-        flex: 1;
-        padding: 10px;
-        text-align: center;
-      }
-      .modal-actions .btn-confirm {
-        background: var(--cyan-dim);
-        color: var(--cyan);
-        border-color: var(--cyan);
-      }
-      .modal-actions .btn-confirm:hover {
-        background: var(--border-bright);
-        box-shadow: 0 4px 15px var(--cyan-dim);
-      }
-      .modal-actions .btn-destructive {
-        background: rgba(255, 68, 85, 0.12);
-        color: var(--red);
-        border-color: rgba(255, 68, 85, 0.3);
-      }
-      .modal-actions .btn-destructive:hover {
-        background: rgba(255, 68, 85, 0.2);
-        box-shadow: 0 4px 15px rgba(255, 68, 85, 0.2);
-      }
-
-      /* ─── Settings ──────────────────────────────────────── */
-      .settings-group {
-        background: var(--bg-surface);
-        border: 1px solid var(--border);
-        border-radius: 2px;
-        padding: 24px;
-        margin-bottom: 24px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-      }
-      .settings-group::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 3px;
-        height: 100%;
-        background: var(--cyan);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-      .settings-group:hover {
-        border-color: var(--border-bright);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-      }
-      .settings-group:hover::before {
-        opacity: 1;
-      }
-      .settings-group h3 {
-        margin-bottom: 20px;
-        color: var(--cyan);
-        font-size: 12px;
-        letter-spacing: 2px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .setting-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        transition: all 0.15s ease;
-      }
-      .setting-item:last-child {
-        border-bottom: none;
-      }
-      .setting-item:hover {
-        padding-left: 8px;
-      }
-      .setting-label {
-        font-weight: 700;
-        font-size: 12px;
-        color: var(--text);
-        letter-spacing: 0.5px;
-      }
-      .setting-desc {
-        font-size: 10px;
-        color: var(--text-dim);
-        margin-top: 4px;
-        max-width: 400px;
-        line-height: 1.6;
-      }
-
-      /* Custom Controls */
-      select,
-      input[type="number"] {
-        background: rgba(0, 0, 0, 0.5);
-        color: var(--cyan);
-        border: 1px solid var(--border);
-        padding: 8px 12px;
-        border-radius: 2px;
-        font-size: 12px;
-        font-family: var(--font);
-        cursor: pointer;
-        outline: none;
-        transition: all 0.2s ease;
-      }
-      select:hover,
-      select:focus,
-      input[type="number"]:hover,
-      input[type="number"]:focus {
-        border-color: var(--cyan);
-        box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
-      }
-      input[type="number"] {
-        width: 80px;
-        text-align: center;
-        -moz-appearance: textfield;
-      }
-      input[type="number"]::-webkit-inner-spin-button,
-      input[type="number"]::-webkit-outer-spin-button {
-        opacity: 1;
-      }
-
-      /* Range Slider */
-      .slider-container {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 180px;
-      }
-      input[type="range"] {
-        -webkit-appearance: none;
-        width: 100%;
-        background: transparent;
-      }
-      input[type="range"]:focus {
-        outline: none;
-      }
-      input[type="range"]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 4px;
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 2px;
-      }
-      input[type="range"]::-webkit-slider-thumb {
-        height: 16px;
-        width: 16px;
-        border-radius: 2px;
-        background: var(--cyan);
-        cursor: pointer;
-        -webkit-appearance: none;
-        margin-top: -6px;
-        box-shadow: 0 0 8px var(--cyan);
-        transition: transform 0.15s ease;
-      }
-      input[type="range"]:active::-webkit-slider-thumb {
-        transform: scale(1.3);
-      }
-      .slider-value {
-        font-family: var(--font);
-        color: var(--cyan);
-        font-weight: bold;
-        font-size: 12px;
-        min-width: 28px;
-        text-align: right;
-      }
-
-      /* GitHub Link */
-      .github-link {
-        color: var(--cyan);
-        text-decoration: none;
-        font-weight: 900;
-        padding: 10px 24px;
-        border-radius: 2px;
-        background: var(--cyan-ghost);
-        border: 1px solid var(--cyan);
-        transition: all 0.3s ease;
-        display: inline-block;
-        font-size: 11px;
-        letter-spacing: 1px;
-        box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
-      }
-      .github-link:hover {
-        background: var(--cyan);
-        color: #000;
-        transform: translateY(-2px);
-        box-shadow: 0 0 30px var(--cyan);
-      }
-
-      /* ─── Image Lightbox ────────────────────────────────── */
-      .lightbox-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        cursor: zoom-out;
-        backdrop-filter: blur(8px);
-      }
-      .lightbox-overlay img {
-        max-width: 90vw;
-        max-height: 90vh;
-        border: 2px solid var(--cyan);
-        border-radius: 2px;
-        box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
-      }
-
-      /* ─── Loading ───────────────────────────────────────── */
-      .loading-indicator {
-        display: none;
-        text-align: center;
-        color: var(--magenta);
-        margin: 32px 0;
-        font-weight: 900;
-        font-size: 12px;
-        letter-spacing: 2px;
-        animation: loading-blink 1.5s ease-in-out infinite;
-      }
-      @keyframes loading-blink {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
-      }
-
-      /* ─── Empty State ───────────────────────────────────── */
-      .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: var(--text-dim);
-        font-size: 11px;
-        letter-spacing: 1px;
-      }
-
-      /* ─── Disabled controls for Web Mode ───────────────── */
-      [disabled],
-      .setting-item.disabled-web {
-        opacity: 0.45 !important;
-        cursor: not-allowed !important;
-        pointer-events: none !important;
-      }
-      .setting-item.disabled-web select,
-      .setting-item.disabled-web input {
-        pointer-events: none !important;
-      }
-      .setting-item.disabled-web {
-        position: relative;
-      }
-      .setting-item.disabled-web::after {
-        content: "EXTENSION ONLY / 仅插件可用";
-        position: absolute;
-        right: 12px;
-        top: 8px;
-        font-size: 9px;
-        color: var(--red);
-        font-family: var(--font);
-        letter-spacing: 1px;
-        background: rgba(255, 68, 85, 0.1);
-        border: 1px solid rgba(255, 68, 85, 0.2);
-        padding: 2px 6px;
-        border-radius: 2px;
-        pointer-events: none;
-      }
-      button[disabled] {
-        opacity: 0.4 !important;
-        cursor: not-allowed !important;
-        pointer-events: none !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        background: rgba(255, 255, 255, 0.02) !important;
-        color: var(--text-dim) !important;
-        box-shadow: none !important;
-      }
-    </style>
+    <link rel="stylesheet" href="/src/dashboard/styles.css" />
   </head>
   <body>
     <aside class="sidebar">
@@ -917,7 +141,7 @@
                 cached in browser's persistent IndexedDB.
               </div>
 
-              <!-- New Detailed Model Status Area -->
+              <!-- Model Status Grid: Inline Dual Action Badges -->
               <div
                 class="model-status-grid"
                 style="
@@ -949,114 +173,100 @@
                     pointer-events: none;
                   "
                 ></div>
+                <!-- DET Row -->
                 <div
                   style="
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 6px 0;
+                    padding: 8px 0;
                     border-bottom: 1px solid rgba(0, 243, 255, 0.1);
                     position: relative;
+                    flex-wrap: wrap;
+                    gap: 6px;
                   "
                 >
-                  <div style="display: flex; align-items: center; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
                     <span style="color: var(--text-dim); letter-spacing: 1px">[ DET_CORE_v5 ]</span>
                     <a
                       id="lbl-download-det-official"
                       href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar"
                       target="_blank"
-                      style="
-                        color: var(--cyan);
-                        text-decoration: underline;
-                        font-size: 10px;
-                        opacity: 0.7;
-                        transition: opacity 0.2s;
-                      "
-                      onmouseover="this.style.opacity = '1'"
-                      onmouseout="this.style.opacity = '0.7'"
-                      >[ 官方源 ]</a
+                      class="cyber-badge"
+                      >官方源</a
                     >
                     <a
                       id="lbl-download-det-backup"
                       href="https://github.com/miaoston/ORCMeow/releases"
                       target="_blank"
-                      style="
-                        color: var(--cyan);
-                        text-decoration: underline;
-                        font-size: 10px;
-                        opacity: 0.7;
-                        transition: opacity 0.2s;
-                      "
-                      onmouseover="this.style.opacity = '1'"
-                      onmouseout="this.style.opacity = '0.7'"
-                      >[ 备用源 ]</a
+                      class="cyber-badge"
+                      >备用源</a
                     >
                   </div>
-                  <span id="status-det" style="color: var(--red); font-weight: bold">MISSING</span>
+                  <div style="display: flex; align-items: center; gap: 6px">
+                    <button id="btn-sync-det" class="cyber-btn">⚡ 在线同步</button>
+                    <button id="btn-import-det" class="cyber-btn">📦 本地导入</button>
+                    <span
+                      id="status-det"
+                      style="
+                        color: var(--red);
+                        font-weight: bold;
+                        min-width: 60px;
+                        text-align: right;
+                      "
+                      >MISSING</span
+                    >
+                  </div>
                 </div>
+                <!-- REC Row -->
                 <div
                   style="
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 6px 0;
+                    padding: 8px 0;
                     position: relative;
+                    flex-wrap: wrap;
+                    gap: 6px;
                   "
                 >
-                  <div style="display: flex; align-items: center; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
                     <span style="color: var(--text-dim); letter-spacing: 1px">[ REC_CORE_v5 ]</span>
                     <a
                       id="lbl-download-rec-official"
                       href="https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar"
                       target="_blank"
-                      style="
-                        color: var(--cyan);
-                        text-decoration: underline;
-                        font-size: 10px;
-                        opacity: 0.7;
-                        transition: opacity 0.2s;
-                      "
-                      onmouseover="this.style.opacity = '1'"
-                      onmouseout="this.style.opacity = '0.7'"
-                      >[ 官方源 ]</a
+                      class="cyber-badge"
+                      >官方源</a
                     >
                     <a
                       id="lbl-download-rec-backup"
                       href="https://github.com/miaoston/ORCMeow/releases"
                       target="_blank"
-                      style="
-                        color: var(--cyan);
-                        text-decoration: underline;
-                        font-size: 10px;
-                        opacity: 0.7;
-                        transition: opacity 0.2s;
-                      "
-                      onmouseover="this.style.opacity = '1'"
-                      onmouseout="this.style.opacity = '0.7'"
-                      >[ 备用源 ]</a
+                      class="cyber-badge"
+                      >备用源</a
                     >
                   </div>
-                  <span id="status-rec" style="color: var(--red); font-weight: bold">MISSING</span>
+                  <div style="display: flex; align-items: center; gap: 6px">
+                    <button id="btn-sync-rec" class="cyber-btn">⚡ 在线同步</button>
+                    <button id="btn-import-rec" class="cyber-btn">📦 本地导入</button>
+                    <span
+                      id="status-rec"
+                      style="
+                        color: var(--red);
+                        font-weight: bold;
+                        min-width: 60px;
+                        text-align: right;
+                      "
+                      >MISSING</span
+                    >
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div
-              style="
-                text-align: right;
-                min-width: 140px;
-                padding-top: 4px;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-              "
-            >
-              <button id="btn-download-models" class="btn" style="width: 100%">
-                INITIALIZE_MODELS
-              </button>
-              <button id="btn-import-models" class="btn btn-primary" style="width: 100%">
-                📦 IMPORT_LOCAL_FILES
-              </button>
+              <!-- Hidden file inputs for targeted model import -->
+              <input type="file" id="file-input-det" accept=".tar" style="display: none" />
+              <input type="file" id="file-input-rec" accept=".tar" style="display: none" />
+              <!-- Keep legacy input for backward-compatible test harness -->
               <input
                 type="file"
                 id="model-file-input"
