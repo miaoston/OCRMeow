@@ -24,18 +24,18 @@ export async function checkBundledModelsExist(): Promise<boolean> {
   if (cachedBundledExist !== null) return cachedBundledExist;
 
   // Try HEAD method first for ultra-lightweight check
-  const dRes = await fetch("/models/det.tar", { method: "HEAD" }).catch(() => null);
-  const rRes = await fetch("/models/rec.tar", { method: "HEAD" }).catch(() => null);
+  const dRes = await fetch("models/det.tar", { method: "HEAD" }).catch(() => null);
+  const rRes = await fetch("models/rec.tar", { method: "HEAD" }).catch(() => null);
   if (dRes && rRes && dRes.ok && rRes.ok) {
     cachedBundledExist = true;
     return true;
   }
 
   // Fallback to GET check with range header (only requests 1 byte to verify existence)
-  const dResRange = await fetch("/models/det.tar", { headers: { Range: "bytes=0-0" } }).catch(
+  const dResRange = await fetch("models/det.tar", { headers: { Range: "bytes=0-0" } }).catch(
     () => null,
   );
-  const rResRange = await fetch("/models/rec.tar", { headers: { Range: "bytes=0-0" } }).catch(
+  const rResRange = await fetch("models/rec.tar", { headers: { Range: "bytes=0-0" } }).catch(
     () => null,
   );
   if (dResRange && rResRange && dResRange.ok && rResRange.ok) {
@@ -139,8 +139,8 @@ export async function performOCR(dataUrl: string): Promise<any[]> {
         let activeRecBlob = recBlob;
 
         if (!activeDetBlob || !activeRecBlob) {
-          const dRes = await fetch("/models/det.tar").catch(() => null);
-          const rRes = await fetch("/models/rec.tar").catch(() => null);
+          const dRes = await fetch("models/det.tar").catch(() => null);
+          const rRes = await fetch("models/rec.tar").catch(() => null);
           if (dRes && rRes && dRes.ok && rRes.ok) {
             activeDetBlob = await dRes.blob();
             activeRecBlob = await rRes.blob();

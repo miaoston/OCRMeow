@@ -43,12 +43,7 @@ function setupNavigation(): void {
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Web-Mode adaptation
   if (IS_WEB_MODE) {
-    const disabledIds = [
-      "setting-theme-action",
-      "setting-distortion",
-      "btn-export-history",
-      "btn-clear-history",
-    ];
+    const disabledIds = ["setting-theme-action", "setting-distortion"];
     disabledIds.forEach((id) => {
       const el = document.getElementById(id) as
         | HTMLSelectElement
@@ -62,12 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    const labelIds = [
-      "lbl-theme-action",
-      "lbl-distortion",
-      "lbl-export-history",
-      "lbl-clear-history",
-    ];
+    const labelIds = ["lbl-theme-action", "lbl-distortion"];
     labelIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.textContent += " [EXTENSION ONLY]";

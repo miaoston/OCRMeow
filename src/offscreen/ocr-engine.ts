@@ -11,8 +11,8 @@ async function tryGetModels() {
   let r = await getAsset("rec.tar");
 
   if (!d || !r) {
-    const dRes = await fetch("/models/det.tar").catch(() => null);
-    const rRes = await fetch("/models/rec.tar").catch(() => null);
+    const dRes = await fetch("models/det.tar").catch(() => null);
+    const rRes = await fetch("models/rec.tar").catch(() => null);
 
     if (dRes && rRes && dRes.ok && rRes.ok) {
       d = await dRes.blob();

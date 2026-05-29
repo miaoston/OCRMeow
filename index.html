@@ -370,25 +370,18 @@
         <div class="settings-group">
           <h3 id="setting-grp-history">▸ HISTORY & STORAGE</h3>
 
-          <div class="setting-item disabled-web">
+          <div class="setting-item">
             <div>
               <div class="setting-label" id="lbl-history-limit">History Limit</div>
               <div class="setting-desc" id="desc-history-limit">
                 Maximum number of recent OCR results to keep (10 – 9999).
               </div>
             </div>
-            <input
-              type="number"
-              id="setting-history-limit"
-              min="10"
-              max="9999"
-              value="100"
-              disabled
-            />
+            <input type="number" id="setting-history-limit" min="10" max="9999" value="100" />
           </div>
 
           <div
-            class="setting-item disabled-web"
+            class="setting-item"
             style="flex-direction: column; align-items: stretch; gap: 12px; border-bottom: none"
           >
             <div class="setting-desc" id="desc-export-location">
@@ -399,16 +392,10 @@
                 id="btn-export-history"
                 class="btn btn-primary"
                 style="flex: 1; padding: 10px"
-                disabled
               >
                 📦 <span id="lbl-export-history">EXPORT_HISTORY</span>
               </button>
-              <button
-                id="btn-clear-history"
-                class="btn btn-danger"
-                style="flex: 1; padding: 10px"
-                disabled
-              >
+              <button id="btn-clear-history" class="btn btn-danger" style="flex: 1; padding: 10px">
                 🗑 <span id="lbl-clear-history">CLEAR_ALL</span>
               </button>
             </div>

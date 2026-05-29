@@ -100,3 +100,10 @@ npm run type-check        # tsc --noEmit 类型安全审计
 node tests/run_ocr_test.js # Puppeteer 冒烟测试
 npm run build             # Vite 生产构建
 ```
+
+---
+
+## 🔄 Recent Milestones
+
+- **Milestone 16 (2026-05-29)**: Fixed sub-path deployment 404 errors (like GitHub Pages) by switching to relative model fetching paths (`models/det.tar`, etc.). Fully unlocked and enabled History Limit controls, Export History, and Clear History on the Web Dashboard using local IndexedDB + JSZip, providing complete feature parity for static web deployments.
+- **Milestone 15 (2026-05-28)**: Decoupled automatic history saving from the background worker to ensure statelessness. Extracted all CSS from HTML files into a shared Vite asset pipeline, and decomposed the 1380+ line god-file into 7 highly-focused, single-responsibility modules.
