@@ -328,5 +328,15 @@ export function getDataPadStyles(theme: CaptureTheme) {
       pointer-events: none;
       animation: ocrmeow-scanline 4s linear infinite;
     }
+
+    @keyframes ocrmeow-scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(540px); }
+    }
+
+    @keyframes ocrmeow-led-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
+      50% { opacity: 0.4; box-shadow: 0 0 2px currentColor; }
+    }
   `;
 }

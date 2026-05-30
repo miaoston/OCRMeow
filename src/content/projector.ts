@@ -7,10 +7,11 @@
  * - Screen Viewport (coordinates relative to window)
  */
 export class CoordinateProjector {
-  private dpr: number;
-
-  constructor() {
-    this.dpr = window.devicePixelRatio || 1;
+  /**
+   * Get current DPR dynamically to support zoom changes & screen swaps
+   */
+  getDPR(): number {
+    return window.devicePixelRatio || 1;
   }
 
   /**
@@ -18,7 +19,7 @@ export class CoordinateProjector {
    * Logic: css = physical / dpr
    */
   physicalToCss(physicalPx: number): number {
-    return physicalPx / this.dpr;
+    return physicalPx / this.getDPR();
   }
 
   /**
@@ -30,9 +31,10 @@ export class CoordinateProjector {
    * @param offsetY Starting Y of the selection crop (CSS px)
    */
   projectPoint(physicalX: number, physicalY: number, offsetX: number, offsetY: number) {
+    const dpr = this.getDPR();
     return {
-      x: physicalX / this.dpr + offsetX,
-      y: physicalY / this.dpr + offsetY,
+      x: physicalX / dpr + offsetX,
+      y: physicalY / dpr + offsetY,
     };
   }
 
@@ -40,14 +42,7 @@ export class CoordinateProjector {
    * Project a full dimension (width/height) from physical to CSS.
    */
   projectDimension(physicalSize: number): number {
-    return physicalSize / this.dpr;
-  }
-
-  /**
-   * Get current DPR for external use (e.g., Canvas scaling)
-   */
-  getDPR(): number {
-    return this.dpr;
+    return physicalSize / this.getDPR();
   }
 }
 

@@ -167,7 +167,6 @@ export async function loadHistoryView(): Promise<void> {
 export function openLightbox(imageSrc: string): void {
   const overlay = document.createElement("div");
   overlay.className = "lightbox-overlay";
-  overlay.onclick = () => overlay.remove();
 
   const img = document.createElement("img");
   img.src = imageSrc;
@@ -175,11 +174,17 @@ export function openLightbox(imageSrc: string): void {
   overlay.appendChild(img);
   document.body.appendChild(overlay);
 
+  const cleanup = () => {
+    overlay.remove();
+    window.removeEventListener("keydown", onKey);
+  };
+
+  overlay.onclick = cleanup;
+
   // ESC to close
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
-      overlay.remove();
-      window.removeEventListener("keydown", onKey);
+      cleanup();
     }
   };
   window.addEventListener("keydown", onKey);

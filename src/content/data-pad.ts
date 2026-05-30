@@ -186,9 +186,26 @@ export function createDataPad(
     updateUI();
   };
 
+  const copyToClipboard = (text: string): Promise<void> => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    const activeEl = document.activeElement;
+    const tempTextarea = document.createElement("textarea");
+    tempTextarea.value = text;
+    tempTextarea.style.cssText = "position:absolute;left:-9999px;top:-9999px;";
+    document.body.appendChild(tempTextarea);
+    tempTextarea.select();
+
+    const success = document.execCommand("copy");
+    document.body.removeChild(tempTextarea);
+    if (activeEl instanceof HTMLElement) activeEl.focus();
+
+    return success ? Promise.resolve() : Promise.reject(new Error("execCommand failed"));
+  };
+
   copyBtn.onclick = () => {
-    navigator.clipboard
-      .writeText(textArea.value.trim())
+    copyToClipboard(textArea.value.trim())
       .then(() => {
         copyBtn.textContent = t.copied;
         setTimeout(() => {

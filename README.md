@@ -105,5 +105,7 @@ npm run build             # Vite 生产构建
 
 ## 🔄 Recent Milestones
 
+- **Milestone 18 (2026-05-30)**: Eradicated high-priority architectural defects. Replaced stale coordinate caching in `projector.ts` with live browser pixel ratio getters to support dynamic page zoom/resolution screen swaps. Prevented global keyboard listener memory leaks in the dashboard lightbox overlay through unified event closures. Declared missing Shadow DOM `@keyframes` to animate the cyber scanline and led pulses, and introduced an off-screen clipboard fallback for insecure HTTP environments.
+- **Milestone 17 (2026-05-30)**: Transitioned CI pipeline and build pipeline exclusively to a Lean-Only architecture, avoiding weight bloat by hosting model weight assets in GitHub Release drafts and integrating smart, auto-failover, multi-CDN model syncing gateways.
 - **Milestone 16 (2026-05-29)**: Fixed sub-path deployment 404 errors (like GitHub Pages) by switching to relative model fetching paths (`models/det.tar`, etc.). Fully unlocked and enabled History Limit controls, Export History, and Clear History on the Web Dashboard using local IndexedDB + JSZip, providing complete feature parity for static web deployments.
 - **Milestone 15 (2026-05-28)**: Decoupled automatic history saving from the background worker to ensure statelessness. Extracted all CSS from HTML files into a shared Vite asset pipeline, and decomposed the 1380+ line god-file into 7 highly-focused, single-responsibility modules.
