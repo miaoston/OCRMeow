@@ -44,45 +44,23 @@ jobs:
       - name: Run code checks (lint, format, type-check)
         run: npm run check
 
-      - name: Build (Lean - No Models)
+      - name: Build Production Package (Lean Only)
         run: npm run build
 
       - name: Run OCR Easter Egg Test
         run: node tests/run_ocr_test.js
 
-      - name: Package Lean ZIP
+      - name: Package Extension ZIP
         run: |
           cd dist
-          zip -r ../ocrmeow-lean.zip .
+          zip -r ../ocrmeow.zip .
           cd ..
 
-      - name: Download Models for Bundled Build
-        run: |
-          mkdir -p public/models
-          curl -L "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar" -o public/models/det.tar
-          curl -L "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_rec_onnx.tar" -o public/models/rec.tar
-
-      - name: Build (Bundled - With Models)
-        run: npm run build
-
-      - name: Package Bundled ZIP
-        run: |
-          cd dist
-          zip -r ../ocrmeow-bundled.zip .
-          cd ..
-
-      - name: Upload Lean ZIP
+      - name: Upload Extension ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: ocrmeow-lean
-          path: ocrmeow-lean.zip
-          retention-days: 14
-
-      - name: Upload Bundled ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: ocrmeow-bundled
-          path: ocrmeow-bundled.zip
+          name: ocrmeow
+          path: ocrmeow.zip
           retention-days: 14
 
       - name: Setup Pages
