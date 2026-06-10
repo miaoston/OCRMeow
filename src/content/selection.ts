@@ -186,7 +186,7 @@ export function bindSelection(
         .catch((err: any) => {
           infoPanel.textContent =
             err.message === "MODELS_MISSING"
-              ? "❌ Error: Models missing! Please open Settings to download them."
+              ? `❌ ${t.modelsMissing}`
               : `❌ OCR Error: ${err.message}`;
           infoPanel.style.color = "var(--red, #ff4455)";
           infoPanel.style.borderColor = "var(--red, #ff4455)";

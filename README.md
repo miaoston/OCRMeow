@@ -93,6 +93,15 @@ Release model assets are valid for extension/background fetches, CI fixtures,
 and manual downloads, but GitHub Pages browser fetches must prefer a
 CORS-capable CDN because Release asset redirects can fail browser CORS.
 
+## 🔐 First-Run & Privacy UX
+
+首次使用 OCRMeow 时，网页 Demo 和 Chrome 扩展都会明确提示用户：OCR
+需要先下载约 22MB 的本地模型。模型下载完成后会缓存到当前浏览器的
+IndexedDB，后续识别无需重复下载；如果用户正在执行识别，本次请求会在模型准备好后自动继续。
+
+请放心，OCRMeow 会保护用户隐私：所有识别操作都在浏览器本地完成，不会上传到云端。历史记录会按用户设置保存在本地
+IndexedDB，内容包括识别文本和源图片 data URL；用户可以在 Settings 中清空历史，或者清除站点数据来同时删除历史与模型缓存。
+
 ---
 
 ## 📦 Quick Start

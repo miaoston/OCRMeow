@@ -29,8 +29,20 @@ async function checkAndLoadModels(): Promise<boolean> {
   recBlob = blobs.recBlob;
 
   if (!detBlob || !recBlob) {
-    chrome.runtime.sendMessage({ action: "BROADCAST_DOWNLOADING" }).catch(() => {});
-    const downloaded = await downloadAndCacheModels().catch((err) => {
+    chrome.runtime
+      .sendMessage({
+        action: "BROADCAST_DOWNLOADING",
+        payload: { phase: "Preparing local OCR models...", pct: 0 },
+      })
+      .catch(() => {});
+    const downloaded = await downloadAndCacheModels(undefined, (phase, pct) => {
+      chrome.runtime
+        .sendMessage({
+          action: "BROADCAST_DOWNLOADING",
+          payload: { phase, pct },
+        })
+        .catch(() => {});
+    }).catch((err) => {
       console.error("OCRMeow Bridge: Auto-download failed:", err);
       return null;
     });

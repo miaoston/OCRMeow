@@ -11,6 +11,19 @@ interface I18nStrings {
   selectionHint: string;
   selecting: string;
   recognizing: string;
+  firstRunTitle: string;
+  firstRunDownloading: string;
+  firstRunPrivacy: string;
+  firstRunProgressFallback: string;
+  firstRunPhasePreparing: string;
+  firstRunPhaseDetection: string;
+  firstRunPhaseRecognition: string;
+  firstRunPhaseDone: string;
+  firstRunModelDetection: string;
+  firstRunModelRecognition: string;
+  firstRunModelWaiting: string;
+  firstRunModelDone: string;
+  modelsMissing: string;
   noTextFound: string;
   terminalTitle: string;
   editTab: string;
@@ -29,6 +42,22 @@ const dict: Record<Lang, I18nStrings> = {
     selectionHint: "🐱 Drag to select area, press ESC to exit",
     selecting: "Selecting area...",
     recognizing: "🚀 Recognizing text...",
+    firstRunTitle: "Preparing local OCR",
+    firstRunDownloading:
+      "First use needs a local OCR model download (~22MB). Please keep this page open.",
+    firstRunPrivacy:
+      "Relax. OCRMeow protects your privacy: recognition runs locally in your browser and is never uploaded to the cloud.",
+    firstRunProgressFallback: "Downloading local model...",
+    firstRunPhasePreparing: "Preparing local OCR models...",
+    firstRunPhaseDetection: "Downloading text detection model...",
+    firstRunPhaseRecognition: "Downloading text recognition model...",
+    firstRunPhaseDone: "Models saved locally. Starting recognition...",
+    firstRunModelDetection: "Text detection model",
+    firstRunModelRecognition: "Text recognition model",
+    firstRunModelWaiting: "Waiting",
+    firstRunModelDone: "Ready",
+    modelsMissing:
+      "Local OCR models are missing. Open OCRMeow Studio to download or import them, then try again.",
     noTextFound: "No text found. Press ESC to exit.",
     terminalTitle: "TERMINAL://DATA_PAD",
     editTab: "◉ EDIT.TS",
@@ -45,6 +74,19 @@ const dict: Record<Lang, I18nStrings> = {
     selectionHint: "🐱 拖拽鼠标划选区域，按 ESC 退出",
     selecting: "正在选取区域...",
     recognizing: "🚀 喵力加载中，正在识别...",
+    firstRunTitle: "正在准备本地 OCR",
+    firstRunDownloading: "首次使用需要下载本地 OCR 模型（约 22MB），请保持页面打开。",
+    firstRunPrivacy: "请放心，我们会保护您的隐私：所有识别都在本地完成，不会上传到云端。",
+    firstRunProgressFallback: "正在下载本地模型...",
+    firstRunPhasePreparing: "正在准备本地 OCR 模型...",
+    firstRunPhaseDetection: "正在下载文本检测模型...",
+    firstRunPhaseRecognition: "正在下载文本识别模型...",
+    firstRunPhaseDone: "模型已保存到本地，正在启动识别...",
+    firstRunModelDetection: "文本检测模型",
+    firstRunModelRecognition: "文本识别模型",
+    firstRunModelWaiting: "等待中",
+    firstRunModelDone: "已就绪",
+    modelsMissing: "本地 OCR 模型缺失。请打开 OCRMeow Studio 下载或导入模型后再试。",
     noTextFound: "未识别到文字，按 ESC 退出",
     terminalTitle: "终端://数据面板",
     editTab: "◉ 编辑模式",

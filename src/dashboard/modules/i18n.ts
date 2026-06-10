@@ -49,11 +49,22 @@ export const i18n = {
     "btn-sync-rec": "⚡ Sync",
     "btn-import-det": "📦 Import",
     "btn-import-rec": "📦 Import",
-    "wizard-title": "AI_CORE://INITIALIZATION_WIZARD",
+    "wizard-title": "FIRST RUN SETUP",
     "wizard-desc":
-      "Welcome to OCRMeow. To enable 100% local and offline text recognition, we need to sync the AI core (approx. 22MB) to your browser's local database. This is a one-time operation.",
-    "wizard-btn": "BOOT_CYBER_CORE (SYNC_MODELS)",
-    "wizard-loading": "SYNCING_NEURAL_NETWORKS...",
+      "OCRMeow needs to download the local OCR model before the first recognition. This is a one-time setup and usually takes under a minute.",
+    "wizard-point-model-title": "One-time model download",
+    "wizard-point-model-desc": "About 22MB will be cached in this browser for future OCR runs.",
+    "wizard-point-local-title": "Recognition stays on device",
+    "wizard-point-local-desc":
+      "OCRMeow protects your privacy: recognition runs locally in your browser and is never uploaded to the cloud.",
+    "wizard-point-history-title": "History is under your control",
+    "wizard-point-history-desc":
+      "Recognized text and source images are stored locally only when history is enabled.",
+    "wizard-privacy-note":
+      "You can clear history anytime from Settings. Clearing site data also removes the cached models.",
+    "wizard-btn": "Download & Continue",
+    "wizard-skip": "Set up later",
+    "wizard-loading": "Preparing local OCR...",
   },
   zh: {
     "nav-studio": "◉ 工作区",
@@ -99,11 +110,20 @@ export const i18n = {
     "btn-sync-rec": "⚡ 在线同步",
     "btn-import-det": "📦 本地导入",
     "btn-import-rec": "📦 本地导入",
-    "wizard-title": "AI_CORE://初始化引导",
+    "wizard-title": "首次使用准备",
     "wizard-desc":
-      "欢迎使用 OCRMeow。为了实现 100% 纯本地离线识别，我们需要将 AI 核心（约 22MB）同步到您的浏览器本地数据库。此操作仅需执行一次。",
-    "wizard-btn": "启动赛博核心 (同步模型)",
-    "wizard-loading": "正在同步神经网络...",
+      "OCRMeow 首次识别前需要下载本地 OCR 模型。这个准备过程只需一次，通常一分钟内完成。",
+    "wizard-point-model-title": "一次性下载模型",
+    "wizard-point-model-desc": "约 22MB，会缓存在当前浏览器中，后续识别无需重复下载。",
+    "wizard-point-local-title": "识别留在本机",
+    "wizard-point-local-desc":
+      "请放心，我们会保护您的隐私：所有识别操作都在本地完成，不会上传到云端。",
+    "wizard-point-history-title": "历史记录可控",
+    "wizard-point-history-desc": "识别文字和源图片仅按设置保存在本地历史中，可随时清空。",
+    "wizard-privacy-note": "在设置中可清空历史；清除站点数据会同时删除模型缓存。",
+    "wizard-btn": "下载并继续",
+    "wizard-skip": "稍后设置",
+    "wizard-loading": "正在准备本地 OCR...",
   },
 };
 

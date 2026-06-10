@@ -4,6 +4,20 @@
 import { downloadAndCacheModels, DEFAULT_MODEL_URLS } from "../../utils/models";
 import { getLang, i18n } from "./i18n";
 
+function formatModelDownloadPhase(phase: string): string {
+  const isZh = getLang() === "zh";
+  if (isZh) {
+    if (phase.includes("Detection")) return "正在下载文本检测模型...";
+    if (phase.includes("Recognition")) return "正在下载文本识别模型...";
+    if (phase.includes("Done")) return "模型已保存到本地，正在完成设置...";
+    return "正在准备本地 OCR...";
+  }
+  if (phase.includes("Detection")) return "Downloading text detection model...";
+  if (phase.includes("Recognition")) return "Downloading text recognition model...";
+  if (phase.includes("Done")) return "Models saved locally. Finishing setup...";
+  return phase;
+}
+
 /**
  * Show a themed alert modal (replaces native alert()).
  * Returns a Promise that resolves when the user dismisses it.
@@ -108,18 +122,47 @@ export function showSetupWizard(): Promise<void> {
     overlay.style.backdropFilter = "blur(12px)";
 
     overlay.innerHTML = `
-      <div class="modal-box" style="width: 480px; border-color: var(--magenta); box-shadow: 0 0 40px var(--magenta-dim);">
+      <div class="modal-box first-run-modal">
         <div class="modal-scanline" style="background: linear-gradient(90deg, transparent, var(--magenta-dim), transparent);"></div>
         <div class="modal-header" style="background: rgba(255, 0, 255, 0.05);">
           <div class="modal-led" style="background: var(--magenta); box-shadow: 0 0 10px var(--magenta);"></div>
           <div class="modal-title" style="color: var(--magenta); text-shadow: 0 0 8px var(--magenta-dim);">${dict["wizard-title"]}</div>
         </div>
         <div class="modal-body">
-          <div style="font-size: 32px; margin-bottom: 20px;">🐱</div>
-          <p style="letter-spacing: 0.5px; line-height: 1.8;">${dict["wizard-desc"]}</p>
+          <div class="first-run-hero">
+            <div class="first-run-orb">OCR</div>
+            <div>
+              <p class="first-run-lead">${dict["wizard-desc"]}</p>
+              <p class="first-run-muted">${dict["wizard-privacy-note"]}</p>
+            </div>
+          </div>
+
+          <div class="first-run-checks">
+            <div class="first-run-check">
+              <span>1</span>
+              <div>
+                <strong>${dict["wizard-point-model-title"]}</strong>
+                <p>${dict["wizard-point-model-desc"]}</p>
+              </div>
+            </div>
+            <div class="first-run-check">
+              <span>2</span>
+              <div>
+                <strong>${dict["wizard-point-local-title"]}</strong>
+                <p>${dict["wizard-point-local-desc"]}</p>
+              </div>
+            </div>
+            <div class="first-run-check">
+              <span>3</span>
+              <div>
+                <strong>${dict["wizard-point-history-title"]}</strong>
+                <p>${dict["wizard-point-history-desc"]}</p>
+              </div>
+            </div>
+          </div>
           
           <div id="wizard-progress-area" style="display: none; margin-top: 24px;">
-            <div style="font-size: 10px; color: var(--magenta); display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <div style="font-size: 11px; color: var(--magenta); display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px;">
               <span id="wizard-progress-text">${dict["wizard-loading"]}</span>
               <span id="wizard-progress-pct">0%</span>
             </div>
@@ -130,7 +173,7 @@ export function showSetupWizard(): Promise<void> {
         </div>
         <div class="modal-actions" id="wizard-actions">
           <button class="btn btn-destructive" id="btn-wizard-skip" style="flex: 1; padding: 12px; margin-right: 10px;">
-            ${isZh ? "跳过 (手动导入)" : "SKIP (MANUAL IMPORT)"}
+            ${dict["wizard-skip"]}
           </button>
           <button class="btn btn-confirm" id="btn-wizard-start" style="background: var(--magenta-dim); color: var(--magenta); border-color: var(--magenta); flex: 1; padding: 12px;">
             ${dict["wizard-btn"]}
@@ -162,13 +205,7 @@ export function showSetupWizard(): Promise<void> {
       if (progressDivMain) progressDivMain.style.display = "block";
 
       downloadAndCacheModels(DEFAULT_MODEL_URLS, (phase, pct) => {
-        const isZhLocal = getLang() === "zh";
-        let displayPhase = phase;
-        if (isZhLocal) {
-          if (phase.includes("Detection")) displayPhase = "下载检测模型 (det.tar)...";
-          else if (phase.includes("Recognition")) displayPhase = "下载识别模型 (rec.tar)...";
-          else if (phase.includes("Done")) displayPhase = "下载完成!";
-        }
+        const displayPhase = formatModelDownloadPhase(phase);
         // Update both wizard and main progress bars
         const mainBar = document.getElementById("model-progress-bar");
         const mainPct = document.getElementById("model-progress-pct");

@@ -69,7 +69,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "BROADCAST_DOWNLOADING") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "OCR_AUTO_DOWNLOADING" }).catch(() => {});
+        chrome.tabs
+          .sendMessage(tabs[0].id, {
+            action: "OCR_AUTO_DOWNLOADING",
+            payload: message.payload,
+          })
+          .catch(() => {});
       }
     });
     return false;

@@ -16,6 +16,38 @@ import { addResultCard } from "./history";
 
 export { IS_WEB_MODE };
 
+function formatModelDownloadPhase(phase: string, isZh: boolean): string {
+  if (isZh) {
+    if (phase.includes("Detection")) return "正在下载文本检测模型...";
+    if (phase.includes("Recognition")) return "正在下载文本识别模型...";
+    if (phase.includes("Done")) return "模型已保存到本地，正在完成设置...";
+    return "正在准备本地 OCR...";
+  }
+  if (phase.includes("Detection")) return "Downloading text detection model...";
+  if (phase.includes("Recognition")) return "Downloading text recognition model...";
+  if (phase.includes("Done")) return "Models saved locally. Finishing setup...";
+  return phase;
+}
+
+function firstRunDownloadMessage(isZh: boolean): string {
+  if (isZh) {
+    return `
+      <div class="first-run-inline">
+        <p><strong>首次识别需要先下载本地 OCR 模型。</strong></p>
+        <p>模型约 22MB，会缓存在当前浏览器中；下载完成后，OCRMeow 会自动继续识别您刚才选择的图片。</p>
+        <p>请放心，我们会保护您的隐私：所有识别操作都在本地完成，不会上传到云端。识别历史可在设置中随时清空。</p>
+      </div>
+    `;
+  }
+  return `
+    <div class="first-run-inline">
+      <p><strong>First recognition needs a local OCR model download.</strong></p>
+      <p>The model is about 22MB and will be cached in this browser. OCRMeow will resume your current recognition automatically after setup.</p>
+      <p>OCRMeow protects your privacy: recognition runs locally in your browser and is never uploaded to the cloud. History can be cleared from Settings.</p>
+    </div>
+  `;
+}
+
 // ─── Bundled Model Check ───────────────────────────────────────────
 
 let cachedBundledExist: boolean | null = null;
@@ -61,11 +93,11 @@ export async function processOCR(base64Image: string, sourceName: string): Promi
       if (!bundledExist) {
         const isZh = getLang() === "zh";
         const confirmed = await showConfirm(
-          isZh
-            ? "💡 识别引擎需要部署 AI 模型文件（约 22MB）才能工作。是否立即开始下载部署？"
-            : "💡 OCR engine requires AI model files (~22MB) to function. Download and deploy them now?",
-          isZh ? "开始下载" : "DOWNLOAD",
-          isZh ? "取消" : "CANCEL",
+          firstRunDownloadMessage(isZh),
+          isZh ? "下载并继续" : "Download & Continue",
+          isZh ? "稍后" : "Later",
+          false,
+          isZh ? "首次使用准备" : "First Run Setup",
         );
 
         if (confirmed) {
@@ -321,13 +353,7 @@ export async function syncSingleModel(type: "det" | "rec"): Promise<void> {
   Promise.resolve()
     .then(async () => {
       await downloadSingleModel(type, (phase, pct) => {
-        let displayPhase = phase;
-        if (isZh) {
-          if (phase.includes("Detection")) displayPhase = "下载检测模型 (det.tar)...";
-          else if (phase.includes("Recognition")) displayPhase = "下载识别模型 (rec.tar)...";
-          else if (phase.includes("Done")) displayPhase = "下载完成!";
-        }
-        updateProgress(displayPhase, pct);
+        updateProgress(formatModelDownloadPhase(phase, isZh), pct);
       });
 
       await showModal(
@@ -413,13 +439,7 @@ export async function downloadModelsAndRunOCR(
   Promise.resolve()
     .then(async () => {
       await downloadAndCacheModels({ det: detUrl, rec: recUrl }, (phase, pct) => {
-        let displayPhase = phase;
-        if (isZh) {
-          if (phase.includes("Detection")) displayPhase = "下载检测模型 (det.tar)...";
-          else if (phase.includes("Recognition")) displayPhase = "下载识别模型 (rec.tar)...";
-          else if (phase.includes("Done")) displayPhase = "下载完成!";
-        }
-        updateProgress(displayPhase, pct);
+        updateProgress(formatModelDownloadPhase(phase, isZh), pct);
       });
 
       await checkModelStatus();

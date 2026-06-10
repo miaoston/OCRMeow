@@ -20,18 +20,142 @@ import { resolveContentLang, getContentDict, resolveModelName, resolveActionThem
 import { createUIHost, createOverlay, createInfoPanel } from "./overlay";
 import { projector } from "./projector";
 
+function formatFirstRunPhase(phase: string, t: ReturnType<typeof getContentDict>): string {
+  if (phase.includes("Detection")) return t.firstRunPhaseDetection;
+  if (phase.includes("Recognition")) return t.firstRunPhaseRecognition;
+  if (phase.includes("Done")) return t.firstRunPhaseDone;
+  if (phase.includes("Preparing")) return t.firstRunPhasePreparing;
+  return t.firstRunProgressFallback;
+}
+
+function updateFirstRunDownloadPanel(
+  infoPanel: HTMLElement,
+  phase: string,
+  pct: number,
+  t: ReturnType<typeof getContentDict>,
+): void {
+  const progress = Math.max(0, Math.min(100, Math.round(pct || 0)));
+  const isDetection = phase.includes("Detection");
+  const isRecognition = phase.includes("Recognition");
+  const isDone = phase.includes("Done");
+  const detProgress = isDone
+    ? 100
+    : isRecognition
+      ? 100
+      : isDetection
+        ? Math.max(0, Math.min(100, Math.round(((progress - 2) / 30) * 100)))
+        : 0;
+  const recProgress = isDone
+    ? 100
+    : isRecognition
+      ? Math.max(0, Math.min(100, Math.round(((progress - 36) / 60) * 100)))
+      : 0;
+
+  infoPanel.style.whiteSpace = "normal";
+  infoPanel.style.width = "min(520px, calc(100vw - 32px))";
+  infoPanel.style.maxWidth = "min(520px, calc(100vw - 32px))";
+  infoPanel.style.padding = "16px 18px";
+  infoPanel.style.borderRadius = "18px";
+  infoPanel.style.textAlign = "left";
+  infoPanel.style.lineHeight = "1.45";
+  infoPanel.style.fontFamily =
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif";
+  infoPanel.style.color = "#f7d7ff";
+  infoPanel.style.borderColor = "#ff00ff";
+  infoPanel.style.background = "rgba(10, 10, 14, 0.9)";
+  infoPanel.style.boxShadow = "0 18px 60px rgba(0, 0, 0, 0.45), 0 0 26px rgba(255, 0, 255, 0.42)";
+
+  if (!infoPanel.querySelector("#ocrmeow-download-progress-bar")) {
+    infoPanel.innerHTML = `
+      <div style="display:grid;gap:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div id="ocrmeow-download-title" style="font-size:15px;font-weight:800;color:#fff;"></div>
+          <div id="ocrmeow-download-pct" style="font-size:13px;font-weight:800;color:#ff7cff;min-width:42px;text-align:right;"></div>
+        </div>
+        <div id="ocrmeow-download-desc" style="font-size:13px;font-weight:650;color:#f2d8f8;"></div>
+        <div id="ocrmeow-download-privacy" style="font-size:12px;font-weight:520;color:rgba(255,255,255,0.76);"></div>
+        <div style="height:6px;border-radius:999px;background:rgba(255,255,255,0.12);overflow:hidden;">
+          <div id="ocrmeow-download-progress-bar" style="width:0%;height:100%;border-radius:999px;background:linear-gradient(90deg,#00f3ff,#ff4dff);transition:width 220ms ease;"></div>
+        </div>
+        <div style="display:grid;gap:8px;margin-top:2px;">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;">
+              <span id="ocrmeow-det-label" style="font-size:11px;font-weight:750;color:rgba(255,255,255,0.78);"></span>
+              <span id="ocrmeow-det-status" style="font-size:11px;font-weight:750;color:#7df8ff;"></span>
+            </div>
+            <div style="height:4px;border-radius:999px;background:rgba(255,255,255,0.1);overflow:hidden;">
+              <div id="ocrmeow-det-progress-bar" style="width:0%;height:100%;border-radius:999px;background:#00f3ff;transition:width 220ms ease;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;">
+              <span id="ocrmeow-rec-label" style="font-size:11px;font-weight:750;color:rgba(255,255,255,0.78);"></span>
+              <span id="ocrmeow-rec-status" style="font-size:11px;font-weight:750;color:#ff7cff;"></span>
+            </div>
+            <div style="height:4px;border-radius:999px;background:rgba(255,255,255,0.1);overflow:hidden;">
+              <div id="ocrmeow-rec-progress-bar" style="width:0%;height:100%;border-radius:999px;background:#ff4dff;transition:width 220ms ease;"></div>
+            </div>
+          </div>
+        </div>
+        <div id="ocrmeow-download-phase" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.62);"></div>
+      </div>
+    `;
+  }
+
+  const title = infoPanel.querySelector("#ocrmeow-download-title");
+  const pctEl = infoPanel.querySelector("#ocrmeow-download-pct");
+  const desc = infoPanel.querySelector("#ocrmeow-download-desc");
+  const privacy = infoPanel.querySelector("#ocrmeow-download-privacy");
+  const phaseEl = infoPanel.querySelector("#ocrmeow-download-phase");
+  const bar = infoPanel.querySelector("#ocrmeow-download-progress-bar") as HTMLElement | null;
+  const detLabel = infoPanel.querySelector("#ocrmeow-det-label");
+  const recLabel = infoPanel.querySelector("#ocrmeow-rec-label");
+  const detStatus = infoPanel.querySelector("#ocrmeow-det-status");
+  const recStatus = infoPanel.querySelector("#ocrmeow-rec-status");
+  const detBar = infoPanel.querySelector("#ocrmeow-det-progress-bar") as HTMLElement | null;
+  const recBar = infoPanel.querySelector("#ocrmeow-rec-progress-bar") as HTMLElement | null;
+
+  if (title) title.textContent = t.firstRunTitle;
+  if (pctEl) pctEl.textContent = `${progress}%`;
+  if (desc) desc.textContent = t.firstRunDownloading;
+  if (privacy) privacy.textContent = t.firstRunPrivacy;
+  if (phaseEl) phaseEl.textContent = formatFirstRunPhase(phase, t);
+  if (bar) bar.style.width = `${progress}%`;
+  if (detLabel) detLabel.textContent = t.firstRunModelDetection;
+  if (recLabel) recLabel.textContent = t.firstRunModelRecognition;
+  if (detStatus)
+    detStatus.textContent =
+      detProgress >= 100
+        ? t.firstRunModelDone
+        : isDetection
+          ? `${detProgress}%`
+          : t.firstRunModelWaiting;
+  if (recStatus)
+    recStatus.textContent =
+      recProgress >= 100
+        ? t.firstRunModelDone
+        : isRecognition
+          ? `${recProgress}%`
+          : t.firstRunModelWaiting;
+  if (detBar) detBar.style.width = `${detProgress}%`;
+  if (recBar) recBar.style.width = `${recProgress}%`;
+}
+
 // Global listener for status updates
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action === "OCR_AUTO_DOWNLOADING") {
-    const host = document.getElementById("ocrmeow-root");
-    const infoPanel = host?.shadowRoot?.getElementById("ocrmeow-info");
-    if (infoPanel) {
-      const isZh =
-        document.documentElement.lang.startsWith("zh") || navigator.language.startsWith("zh");
-      infoPanel.textContent = isZh
-        ? "⚡ 首次运行：正在自动下载 AI 模型 (约 22MB)，请稍候..."
-        : "⚡ First-run: Auto-downloading AI models (~22MB), please wait...";
-    }
+    resolveContentLang().then(() => {
+      const host = document.getElementById("ocrmeow-root");
+      const infoPanel = host?.shadowRoot?.getElementById("ocrmeow-info");
+      if (!infoPanel) return;
+      const payload = message.payload || {};
+      updateFirstRunDownloadPanel(
+        infoPanel,
+        payload.phase || "Preparing local OCR models...",
+        payload.pct || 0,
+        getContentDict(),
+      );
+    });
   }
 });
 

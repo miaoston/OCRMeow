@@ -575,6 +575,126 @@ body::after {
   box-shadow: 0 4px 15px rgba(255, 68, 85, 0.2);
 }
 
+.first-run-modal {
+  width: min(540px, 92vw);
+  border-color: var(--magenta);
+  box-shadow:
+    0 0 60px rgba(0, 0, 0, 0.9),
+    0 0 40px var(--magenta-dim),
+    inset 0 0 20px rgba(255, 0, 255, 0.08);
+}
+
+.first-run-hero {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.first-run-orb {
+  width: 74px;
+  height: 74px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 0, 255, 0.45);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 0, 255, 0.08)),
+    rgba(12, 12, 16, 0.86);
+  color: var(--magenta);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  box-shadow: 0 0 24px rgba(255, 0, 255, 0.16);
+}
+
+.first-run-lead {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.first-run-muted {
+  margin: 8px 0 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.first-run-checks {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.first-run-check {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid rgba(255, 0, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.first-run-check > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 0, 255, 0.42);
+  border-radius: 6px;
+  color: var(--magenta);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.first-run-check strong {
+  display: block;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.first-run-check p {
+  margin: 4px 0 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.first-run-inline p {
+  margin: 0 0 10px 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.first-run-inline p:last-child {
+  margin-bottom: 0;
+}
+
+.first-run-inline strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .first-run-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .first-run-orb {
+    width: 58px;
+    height: 58px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+}
+
 /* ─── Settings ──────────────────────────────────────── */
 .settings-group {
   background: var(--bg-surface);
