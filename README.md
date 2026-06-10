@@ -75,6 +75,23 @@ Utils
 
 ---
 
+## 📦 Distribution Strategy
+
+OCRMeow deliberately separates **runtime code** from **model data**:
+
+| Target                             | ORT WASM Runtime                                  | OCR Models                                             |
+| :--------------------------------- | :------------------------------------------------ | :----------------------------------------------------- |
+| Chrome Web Store / extension build | Bundle the single required local JSEP runtime     | Fetch on demand from GitHub Releases/CDN, cache in IDB |
+| Local unpacked extension           | Same as Chrome Web Store for parity               | Fetch on demand or import manually                     |
+| Web Demo / GitHub Pages            | May use local runtime; remote runtime is web-only | Fetch on demand from GitHub Releases/CDN, cache in IDB |
+
+The extension package keeps `ort-wasm-simd-threaded.jsep.wasm` local because ORT
+WASM is executable runtime code. Remotely downloading it after installation is
+risky for Chrome Web Store Manifest V3 review. Model `.tar` files are data
+assets, so they remain fetch-on-demand and are persisted in IndexedDB.
+
+---
+
 ## 📦 Quick Start
 
 ```bash
@@ -105,6 +122,8 @@ npm run build             # Vite 生产构建
 
 ## 🔄 Recent Milestones
 
+- **Milestone 21 (2026-06-10)**: Pruned the Lean package runtime payload from ~165MB to ~46MB by hiding `public/wasm` during production builds, copying back only the ORT JSEP runtime actually used by PaddleOCR (`ort-wasm-simd-threaded.jsep.wasm/.mjs`), and deleting Vite's duplicate hashed ORT wasm fallback. Kept ORT wasm local for Chrome Web Store MV3 compliance because it is executable runtime code; model `.tar` files remain fetch-on-demand data.
+- **Milestone 20 (2026-06-10)**: Canonicalized all public GitHub-facing project links to `OCRMeow`. Verified `OCRMeow/releases` returns directly while the legacy misspelled releases path redirects, then updated visible model backup links in both Studio entry points to avoid redirect-dependent URLs and future agent confusion.
 - **Milestone 18 (2026-05-30)**: Eradicated high-priority architectural defects. Replaced stale coordinate caching in `projector.ts` with live browser pixel ratio getters to support dynamic page zoom/resolution screen swaps. Prevented global keyboard listener memory leaks in the dashboard lightbox overlay through unified event closures. Declared missing Shadow DOM `@keyframes` to animate the cyber scanline and led pulses, and introduced an off-screen clipboard fallback for insecure HTTP environments.
 - **Milestone 17 (2026-05-30)**: Transitioned CI pipeline and build pipeline exclusively to a Lean-Only architecture, avoiding weight bloat by hosting model weight assets in GitHub Release drafts and integrating smart, auto-failover, multi-CDN model syncing gateways.
 - **Milestone 16 (2026-05-29)**: Fixed sub-path deployment 404 errors (like GitHub Pages) by switching to relative model fetching paths (`models/det.tar`, etc.). Fully unlocked and enabled History Limit controls, Export History, and Clear History on the Web Dashboard using local IndexedDB + JSZip, providing complete feature parity for static web deployments.

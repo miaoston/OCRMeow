@@ -39,12 +39,17 @@ export async function getDB() {
   });
 }
 
-export async function saveHistory(text: string, image: string, source: string, limit: number) {
+export async function saveHistory(
+  text: string,
+  image: string,
+  source: string,
+  limit: number,
+): Promise<number> {
   const db = await getDB();
   const tx = db.transaction("history", "readwrite");
   const store = tx.objectStore("history");
 
-  await store.add({
+  const id = await store.add({
     timestamp: Date.now(),
     text,
     image,
@@ -61,6 +66,14 @@ export async function saveHistory(text: string, image: string, source: string, l
       cursor = await cursor.continue();
     }
   }
+  await tx.done;
+  return id as number;
+}
+
+export async function deleteHistoryItem(id: number): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction("history", "readwrite");
+  await tx.objectStore("history").delete(id);
   await tx.done;
 }
 

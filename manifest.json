@@ -4,6 +4,11 @@
   "version": "0.1.0",
   "description": "3D Liquid Glassmorphism OCR Chrome Extension based on PaddleOCR.js",
   "permissions": ["activeTab", "storage", "offscreen", "scripting", "contextMenus", "downloads"],
+  "host_permissions": [
+    "https://paddle-model-ecology.bj.bcebos.com/*",
+    "https://github.com/*",
+    "https://objects.githubusercontent.com/*"
+  ],
   "background": {
     "service_worker": "src/background/worker.ts",
     "type": "module"

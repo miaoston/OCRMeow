@@ -90,10 +90,15 @@ export function showConfirm(
   });
 }
 
+let isWizardActive = false;
+
 /**
  * Show a setup wizard for Web Mode if models are missing.
  */
 export function showSetupWizard(): Promise<void> {
+  if (isWizardActive) return Promise.resolve();
+  isWizardActive = true;
+
   const isZh = getLang() === "zh";
   const dict = isZh ? i18n.zh : (i18n as any).en;
 
@@ -144,6 +149,7 @@ export function showSetupWizard(): Promise<void> {
 
     skipBtn.addEventListener("click", () => {
       overlay.remove();
+      isWizardActive = false;
       resolve();
     });
 
@@ -176,6 +182,7 @@ export function showSetupWizard(): Promise<void> {
         setTimeout(() => {
           if (progressDivMain) progressDivMain.style.display = "none";
           overlay.remove();
+          isWizardActive = false;
           resolve();
         }, 1000);
       });

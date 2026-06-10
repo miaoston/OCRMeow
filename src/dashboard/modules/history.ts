@@ -1,7 +1,7 @@
 // ─── History Module ────────────────────────────────────────────────
 // Result cards (workspace), history list, and lightbox.
 
-import { getHistory } from "../../utils/db";
+import { getHistory, deleteHistoryItem } from "../../utils/db";
 import { getLang, i18n } from "./i18n";
 import { currentSettings } from "./settings";
 
@@ -13,6 +13,7 @@ export function addResultCard(
   timeStr: string,
   imageBase64: string,
   elapsedMs: number,
+  id?: number,
 ): void {
   const container = document.getElementById("results-container");
   if (!container) return;
@@ -51,7 +52,12 @@ export function addResultCard(
   deleteBtn.className = "btn btn-danger";
   deleteBtn.textContent = "✕";
   deleteBtn.style.padding = "6px 10px";
-  deleteBtn.onclick = () => card.remove();
+  deleteBtn.onclick = () => {
+    if (id !== undefined) {
+      deleteHistoryItem(id).catch(() => {});
+    }
+    card.remove();
+  };
 
   headerActions.appendChild(copyBtn);
   headerActions.appendChild(deleteBtn);
@@ -130,7 +136,12 @@ export async function loadHistoryView(): Promise<void> {
     deleteBtn.className = "btn btn-danger";
     deleteBtn.textContent = "✕";
     deleteBtn.style.padding = "6px 10px";
-    deleteBtn.onclick = () => card.remove();
+    deleteBtn.onclick = () => {
+      if (item.id !== undefined) {
+        deleteHistoryItem(item.id).catch(() => {});
+      }
+      card.remove();
+    };
 
     headerActions.appendChild(copyBtn);
     headerActions.appendChild(deleteBtn);

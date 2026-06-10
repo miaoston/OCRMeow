@@ -77,9 +77,9 @@
           const ocr = await PaddleOCR.create({
             lang: "ch",
             ocrVersion: "PP-OCRv5",
-            wasmPath: wasmPath,
             ortOptions: {
               backend: "wasm",
+              wasmPaths: wasmPath,
             },
           });
 

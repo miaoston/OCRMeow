@@ -2,6 +2,7 @@ import puppeteer from "puppeteer-core";
 import sirv from "sirv";
 import http from "http";
 import path from "path";
+import fs from "fs";
 import { execSync } from "child_process";
 
 function findChrome() {
@@ -49,11 +50,32 @@ async function runTest() {
 
   console.log("🚀 Building project for production-like testing...");
   try {
-    execSync("npm run build", { stdio: "inherit" });
+    execSync("npm run build", {
+      stdio: "inherit",
+      env: { ...process.env, OCRMEOW_INCLUDE_EASTER_EGG: "1" },
+    });
   } catch {
     console.error("❌ Build failed!");
     process.exit(1);
   }
+
+  console.log("🚀 Verifying build directories for models leakage...");
+  if (
+    fs.existsSync(path.resolve("dist/models")) ||
+    fs.existsSync(path.resolve("dist/models_temp")) ||
+    fs.existsSync(path.resolve("dist/wasm/ort-wasm-simd-threaded.asyncify.wasm")) ||
+    fs.existsSync(path.resolve("dist/wasm/ort-wasm-simd-threaded.jspi.wasm")) ||
+    fs.existsSync(path.resolve("dist/wasm/ort-wasm-simd-threaded.wasm")) ||
+    fs.existsSync(path.resolve("dist/wasm/ort-wasm-simd.wasm")) ||
+    fs.existsSync(path.resolve("dist/wasm/ort-wasm.wasm")) ||
+    fs.readdirSync(path.resolve("dist/assets")).some((file) => /^ort-wasm-.*\.wasm$/.test(file))
+  ) {
+    console.error(
+      "❌ FAILED: Package leakage detected! models or unused ORT wasm variants exist inside dist/.",
+    );
+    process.exit(1);
+  }
+  console.log("🎉 SUCCESS: No model files leaked into dist/!");
 
   // Serve the dist directory
   const assets = sirv("dist", { dev: true });
@@ -204,6 +226,68 @@ async function runTest() {
       process.exit(1);
     }
     console.log("🎉 SUCCESS: Workspace OCR Test Passed!");
+
+    // TEST STEP 4: Verifying History permanent deletion
+    console.log("🚀 Test Step 4: Verifying History permanent deletion...");
+
+    console.log("🚀 Injecting dummy history record directly into IndexedDB...");
+    await page.evaluate(async () => {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("ocrmeow-db", 2);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction("history", "readwrite");
+          const store = tx.objectStore("history");
+          const addReq = store.add({
+            timestamp: Date.now(),
+            text: "Hello Steins Gate",
+            image:
+              "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+            source: "Test Capture",
+          });
+          addReq.onerror = () => reject(addReq.error);
+          addReq.onsuccess = () => resolve();
+        };
+      });
+    });
+    console.log("🎉 SUCCESS: Dummy history record injected!");
+
+    await page.click("#nav-history");
+
+    // Wait for the history card to render
+    console.log("🚀 Waiting for history card to render...");
+    await page.waitForSelector("#history-container .result-card", { timeout: 10000 });
+
+    // Assert that we have the card
+    const historyTextBefore = await page.$eval(
+      "#history-container .result-text",
+      (el) => el.textContent,
+    );
+    console.log(`[HISTORY BEFORE DELETE] ${historyTextBefore}`);
+
+    // Click delete
+    console.log("🚀 Clicking delete button on history card...");
+    await page.click("#history-container .result-card .btn-danger");
+
+    // Wait for the history card to disappear from the DOM
+    await page.waitForSelector("#history-container .result-card", { hidden: true, timeout: 5000 });
+    console.log("🎉 Card disappeared from DOM visually.");
+
+    // Refresh the page to verify it's deleted from IndexedDB permanently
+    console.log("🚀 Refreshing page to verify database-level deletion...");
+    await page.reload({ waitUntil: "load" });
+
+    // Navigate to history again
+    await page.click("#nav-history");
+
+    // Wait for empty state to show up
+    console.log("🚀 Waiting for empty state in history list...");
+    await page.waitForSelector("#history-container .empty-state", { timeout: 10000 });
+    const emptyText = await page.$eval("#history-container .empty-state", (el) => el.textContent);
+    console.log(`[EMPTY STATE TEXT] ${emptyText}`);
+
+    console.log("🎉 SUCCESS: History Permanent Deletion Test Passed!");
 
     await browser.close();
     server.close();

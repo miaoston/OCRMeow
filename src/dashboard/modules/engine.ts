@@ -3,7 +3,7 @@
 // download-and-run, and single-model sync/import.
 
 import { IS_WEB_MODE } from "../../utils/compat";
-import { getAsset, saveHistory } from "../../utils/db";
+import { getAsset, saveAsset, saveHistory } from "../../utils/db";
 import {
   downloadAndCacheModels,
   downloadSingleModel,
@@ -91,13 +91,21 @@ export async function processOCR(base64Image: string, sourceName: string): Promi
         fullText = getLang() === "zh" ? "未发现文字..." : "No text found...";
       }
 
-      addResultCard(fullText, sourceName, new Date().toLocaleTimeString(), base64Image, elapsed);
-
+      let cardId: number | undefined;
       // Save to DB
       if (fullText && fullText !== "未发现文字..." && fullText !== "No text found...") {
         const limit = parseInt(currentSettings.historyLimit, 10) || 100;
-        await saveHistory(fullText, base64Image, sourceName, limit);
+        cardId = await saveHistory(fullText, base64Image, sourceName, limit);
       }
+
+      addResultCard(
+        fullText,
+        sourceName,
+        new Date().toLocaleTimeString(),
+        base64Image,
+        elapsed,
+        cardId,
+      );
     })
     .catch((err: any) => {
       loadingEl.style.display = "none";
@@ -144,6 +152,9 @@ export async function performOCR(dataUrl: string): Promise<any[]> {
           if (dRes && rRes && dRes.ok && rRes.ok) {
             activeDetBlob = await dRes.blob();
             activeRecBlob = await rRes.blob();
+            // Cache them to IndexedDB so subsequent runs are instant & offline-ready
+            saveAsset("det.tar", activeDetBlob).catch(() => {});
+            saveAsset("rec.tar", activeRecBlob).catch(() => {});
           }
         }
 
