@@ -1,5 +1,4 @@
 import { saveAsset, getAsset } from "./db";
-import { IS_WEB_MODE } from "./compat";
 
 export const DEFAULT_MODEL_URLS = {
   det: "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv5_mobile_det_onnx.tar",
@@ -19,15 +18,6 @@ async function fetchWithFallback(
   backupUrl: string,
   timeoutMs = 8000,
 ): Promise<Response> {
-  if (IS_WEB_MODE) {
-    console.log(
-      `Web Mode: Bypassing CORS-blocked primary URL, fetching directly from backup: ${backupUrl}`,
-    );
-    const backupRes = await fetch(backupUrl);
-    if (!backupRes.ok) throw new Error(`Failed to fetch from backup URL.`);
-    return backupRes;
-  }
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
