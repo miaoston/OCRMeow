@@ -3,7 +3,15 @@ import sirv from "sirv";
 import http from "http";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import { execSync } from "child_process";
+
+const TEST_MODEL_URLS = {
+  "det.tar":
+    "https://github.com/miaoston/OCRMeow/releases/download/models/PP-OCRv5_mobile_det_onnx.tar",
+  "rec.tar":
+    "https://github.com/miaoston/OCRMeow/releases/download/models/PP-OCRv5_mobile_rec_onnx.tar",
+};
 
 function findChrome() {
   try {
@@ -39,6 +47,33 @@ function findChrome() {
   } catch {}
 
   return null;
+}
+
+async function ensureModelFile(filename) {
+  const localPath = path.resolve("public/models", filename);
+  if (fs.existsSync(localPath) && fs.statSync(localPath).size > 1024 * 1024) {
+    return localPath;
+  }
+
+  const cacheDir = path.join(os.tmpdir(), "ocrmeow-test-models");
+  const cachedPath = path.join(cacheDir, filename);
+  if (fs.existsSync(cachedPath) && fs.statSync(cachedPath).size > 1024 * 1024) {
+    return cachedPath;
+  }
+
+  const url = TEST_MODEL_URLS[filename];
+  console.log(`🚀 Downloading CI model fixture ${filename} from GitHub Releases...`);
+  fs.mkdirSync(cacheDir, { recursive: true });
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download ${filename}: HTTP ${response.status}`);
+  }
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (buffer.length <= 1024 * 1024) {
+    throw new Error(`Downloaded ${filename} is unexpectedly small (${buffer.length} bytes).`);
+  }
+  fs.writeFileSync(cachedPath, buffer);
+  return cachedPath;
 }
 
 async function runTest() {
@@ -158,8 +193,8 @@ async function runTest() {
 
     // Find the hidden input and upload the local tar files
     const modelInput = await page.$("#model-file-input");
-    const detPath = path.resolve("public/models/det.tar");
-    const recPath = path.resolve("public/models/rec.tar");
+    const detPath = await ensureModelFile("det.tar");
+    const recPath = await ensureModelFile("rec.tar");
     await modelInput.uploadFile(detPath, recPath);
 
     // Wait for the import modal to pop up
