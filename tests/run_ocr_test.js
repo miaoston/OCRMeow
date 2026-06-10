@@ -309,18 +309,41 @@ async function runTest() {
     await page.waitForSelector("#history-container .result-card", { hidden: true, timeout: 5000 });
     console.log("🎉 Card disappeared from DOM visually.");
 
-    // Refresh the page to verify it's deleted from IndexedDB permanently
+    console.log("🚀 Waiting for database-level deletion...");
+    await page.waitForFunction(
+      async () => {
+        const records = await new Promise((resolve, reject) => {
+          const request = indexedDB.open("ocrmeow-db", 2);
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            const db = request.result;
+            const tx = db.transaction("history", "readonly");
+            const store = tx.objectStore("history");
+            const getAllReq = store.getAll();
+            getAllReq.onerror = () => reject(getAllReq.error);
+            getAllReq.onsuccess = () => resolve(getAllReq.result);
+          };
+        });
+        return !records.some((item) => item.text === "Hello Steins Gate");
+      },
+      { timeout: 10000 },
+    );
+    console.log("🎉 Database record disappeared.");
+
+    // Refresh the page to verify it does not resurrect from IndexedDB
     console.log("🚀 Refreshing page to verify database-level deletion...");
     await page.reload({ waitUntil: "load" });
-
-    // Navigate to history again
     await page.click("#nav-history");
 
-    // Wait for empty state to show up
-    console.log("🚀 Waiting for empty state in history list...");
-    await page.waitForSelector("#history-container .empty-state", { timeout: 10000 });
-    const emptyText = await page.$eval("#history-container .empty-state", (el) => el.textContent);
-    console.log(`[EMPTY STATE TEXT] ${emptyText}`);
+    await page.waitForSelector("#history-container", { timeout: 10000 });
+    const historyAfterReload = await page.$eval("#history-container", (el) => el.textContent || "");
+    console.log(`[HISTORY AFTER RELOAD] ${historyAfterReload}`);
+    if (historyAfterReload.includes("Hello Steins Gate")) {
+      console.error("❌ FAILED: Deleted history record resurrected after reload.");
+      await browser.close();
+      server.close();
+      process.exit(1);
+    }
 
     console.log("🎉 SUCCESS: History Permanent Deletion Test Passed!");
 

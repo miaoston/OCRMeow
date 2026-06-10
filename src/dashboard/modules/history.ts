@@ -52,9 +52,9 @@ export function addResultCard(
   deleteBtn.className = "btn btn-danger";
   deleteBtn.textContent = "✕";
   deleteBtn.style.padding = "6px 10px";
-  deleteBtn.onclick = () => {
+  deleteBtn.onclick = async () => {
     if (id !== undefined) {
-      deleteHistoryItem(id).catch(() => {});
+      await deleteHistoryItem(id);
     }
     card.remove();
   };
@@ -136,11 +136,17 @@ export async function loadHistoryView(): Promise<void> {
     deleteBtn.className = "btn btn-danger";
     deleteBtn.textContent = "✕";
     deleteBtn.style.padding = "6px 10px";
-    deleteBtn.onclick = () => {
+    deleteBtn.onclick = async () => {
       if (item.id !== undefined) {
-        deleteHistoryItem(item.id).catch(() => {});
+        await deleteHistoryItem(item.id);
       }
       card.remove();
+      if (!container.querySelector(".result-card")) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = i18n[getLang()]["empty-history"];
+        container.appendChild(empty);
+      }
     };
 
     headerActions.appendChild(copyBtn);
