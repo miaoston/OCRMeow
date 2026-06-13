@@ -11,5 +11,5 @@ temp_paddleocr
 .DS_Store
 
 # Agent specialized files
-AGENTS.md
 GEMINI.md
+TODO.md
