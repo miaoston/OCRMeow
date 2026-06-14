@@ -168,7 +168,7 @@
   - **Review Boundary**: Treat ORT `.wasm` as runtime code and model `.tar` as data. This is the key architectural boundary for future package-size discussions and Chrome MV3 review risk.
 - **[2026-06-10] (GitHub Pages Model CDN Reality)**:
   - **Release Asset CORS Trap**: GitHub Release model URLs return valid files for Node/CI, manual downloads, and extension/background contexts, but browser `fetch()` from GitHub Pages can fail CORS after the release-assets redirect.
-  - **Web Model Source Rule**: Web Demo model sync must try the Paddle/Baidu model CDN first because it is CORS-capable for model tar requests; GitHub Releases stay as backup/manual/CI fixtures, not the preferred browser fetch path.
+  - **Updated Web Model Source Rule**: Later 2026-06-13 checks showed Paddle/Baidu responses can also omit browser CORS headers. The reliable Web Demo strategy is same-origin Pages models, not cross-origin runtime downloads.
 - **[2026-06-10] (IndexedDB Delete Must Be Awaited)**:
   - **Delete Race**: Removing history cards from the DOM before `deleteHistoryItem()` finishes can pass a visual check while the IndexedDB transaction is still pending; fast CI reloads can then resurrect the record. Await DB deletion before removing the card, and have tests assert the IndexedDB record is gone rather than relying only on `.empty-state` rendering.
 - **[2026-06-13] (Project Hygiene & GitHub Handoff Rules)**:
@@ -205,6 +205,12 @@
   - **Package Invariants**: Store packages must not contain model `.tar` files, `AGENTS.md`, `GEMINI.md`, `TODO.md`, `easter_egg_test.html`, `__MACOSX`, or `.DS_Store`. They should contain only the minimal ORT JSEP runtime pair under `dist/wasm/`.
   - **Verification Run**: Latest verified pipeline for this state: `npm run check`, `npm run build`, `npm run test:ocr`, then rebuild `dist` and zip. Headless extension target inspection was inconclusive for service-worker visibility, so do not claim manual incognito menu verification unless a browser session confirms it.
   - **Current Worktree Snapshot**: At this handoff, visible non-ignored changes are expected in `dashboard.html`, `index.html`, `manifest.json`, `src/background/worker.ts`, and `src/dashboard/modules/i18n.ts`. `AGENTS.md` is now intentionally tracked for handoff; local release ZIPs are untracked working artifacts and should not be blindly committed.
+- **[2026-06-13] (GitHub Pages OCR Timeout & CORS Fix)**:
+  - **Root Cause Pattern**: `Error: OCR_ENGINE_TIMEOUT` in GitHub Pages usually means the parent Web Studio sent `RUN_OCR` to `sandbox.html` but did not receive `OCR_RESULT` within the parent timeout window. This can be slow PaddleOCR/ORT first-run initialization, a sandbox asset load failure, or an engine promise that never settles.
+  - **CORS Reality Update**: Both the Paddle/Baidu model CDN and GitHub Release asset redirects can respond without `Access-Control-Allow-Origin` for browser fetches from `https://miaoston.github.io`. Do not depend on cross-origin model downloads for the Pages demo.
+  - **Pages Artifact Strategy**: CI must package the Chrome extension ZIP before adding models. After the lean ZIP is uploaded, copy/download `det.tar` and `rec.tar` into `dist/models/` only for the GitHub Pages artifact. This preserves Store package leanness while making Web Demo model fetches same-origin.
+  - **CI Rebuild After Test Rule**: `tests/run_ocr_test.js` intentionally rebuilds with `OCRMEOW_INCLUDE_EASTER_EGG=1`. CI must run a clean `npm run build` after the OCR test and before zipping/deploying, otherwise `easter_egg_test.html` can leak into release artifacts.
+  - **Timeout Hardening**: Web Studio parent timeout is now longer for first-run model initialization, and `src/sandbox/index.ts` sends explicit `OCR_ENGINE_INIT_TIMEOUT`, `OCR_ENGINE_PREDICT_TIMEOUT`, or `OCR_MODELS_NOT_READY` errors instead of letting the parent surface only a vague `OCR_ENGINE_TIMEOUT`.
 
 ---
 
@@ -235,6 +241,12 @@
 - **Chrome Web Store Candidate**: Rebuilt and validated `OCRMeow-Chrome-Web-Store-v0.1.0-service-worker-fix.zip` from `dist`.
 - **Package Hygiene**: Confirmed no model `.tar`, forbidden local docs, `easter_egg_test.html`, macOS metadata, or duplicate ORT wasm variants are included.
 - **Validation Pipeline**: `npm run check` ✅ | `npm run build` ✅ | `npm run test:ocr` ✅ | final `npm run build` ✅
+
+**GitHub Pages OCR Runtime**
+
+- **Same-Origin Pages Models**: CI now injects `det.tar` and `rec.tar` into `dist/models/` only after the lean extension ZIP has already been packaged, so the web demo avoids browser CORS failures without bloating the Chrome Web Store artifact.
+- **Web OCR Timeout Hardening**: Increased the Web Studio parent OCR wait window and added sandbox-level init/predict timeouts with explicit error codes.
+- **Clean Artifact Rebuild**: CI now runs a fresh production build after the Easter Egg OCR test so the test-only page cannot leak into the extension ZIP or Pages artifact.
 
 ### [2026-06-10] Milestone 21 - Lean ORT Runtime Pruning
 

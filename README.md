@@ -79,19 +79,22 @@ Utils
 
 OCRMeow deliberately separates **runtime code** from **model data**:
 
-| Target                             | ORT WASM Runtime                                  | OCR Models                                              |
-| :--------------------------------- | :------------------------------------------------ | :------------------------------------------------------ |
-| Chrome Web Store / extension build | Bundle the single required local JSEP runtime     | Fetch on demand from CDN/Release fallback, cache in IDB |
-| Local unpacked extension           | Same as Chrome Web Store for parity               | Fetch on demand or import manually                      |
-| Web Demo / GitHub Pages            | May use local runtime; remote runtime is web-only | Fetch on demand from CORS-capable CDN, cache in IDB     |
+| Target                             | ORT WASM Runtime                              | OCR Models                                              |
+| :--------------------------------- | :-------------------------------------------- | :------------------------------------------------------ |
+| Chrome Web Store / extension build | Bundle the single required local JSEP runtime | Fetch on demand from CDN/Release fallback, cache in IDB |
+| Local unpacked extension           | Same as Chrome Web Store for parity           | Fetch on demand or import manually                      |
+| Web Demo / GitHub Pages            | Use the local Pages runtime                   | Deployed as same-origin Pages assets, cache in IDB      |
 
 The extension package keeps `ort-wasm-simd-threaded.jsep.wasm` local because ORT
 WASM is executable runtime code. Remotely downloading it after installation is
 risky for Chrome Web Store Manifest V3 review. Model `.tar` files are data
 assets, so they remain fetch-on-demand and are persisted in IndexedDB. GitHub
 Release model assets are valid for extension/background fetches, CI fixtures,
-and manual downloads, but GitHub Pages browser fetches must prefer a
-CORS-capable CDN because Release asset redirects can fail browser CORS.
+and manual downloads, but GitHub Pages browser fetches cannot rely on them
+because Release asset redirects do not consistently expose CORS headers. The CI
+pipeline therefore creates the Chrome extension ZIP before copying model files
+into `dist/models/` for the Pages artifact only. Store packages stay lean; the
+web demo gets same-origin model downloads.
 
 ## 🔐 First-Run & Privacy UX
 
@@ -101,6 +104,11 @@ IndexedDB，后续识别无需重复下载；如果用户正在执行识别，�
 
 请放心，OCRMeow 会保护用户隐私：所有识别操作都在浏览器本地完成，不会上传到云端。历史记录会按用户设置保存在本地
 IndexedDB，内容包括识别文本和源图片 data URL；用户可以在 Settings 中清空历史，或者清除站点数据来同时删除历史与模型缓存。
+
+GitHub Pages 的首次 OCR 初始化可能比扩展环境慢，因为浏览器需要从静态站点加载
+ORT runtime、两个 ONNX 模型并完成 PaddleOCR 初始化。Web Studio 会等待更长的
+初始化窗口，并将 sandbox 内的初始化/推理超时分别回传为明确错误，避免只显示笼统的
+`OCR_ENGINE_TIMEOUT`。
 
 ---
 
@@ -134,7 +142,8 @@ npm run build             # Vite 生产构建
 
 ## 🔄 Recent Milestones
 
-- **Milestone 21 (2026-06-10)**: Pruned the Lean package runtime payload from ~165MB to ~46MB by hiding `public/wasm` during production builds, copying back only the ORT JSEP runtime actually used by PaddleOCR (`ort-wasm-simd-threaded.jsep.wasm/.mjs`), and deleting Vite's duplicate hashed ORT wasm fallback. Kept ORT wasm local for Chrome Web Store MV3 compliance because it is executable runtime code; model `.tar` files remain fetch-on-demand data. Hardened CI to download real model fixtures from GitHub Releases when local developer model files are absent, while Web Demo model sync keeps the CORS-capable primary CDN first. History deletion now waits for IndexedDB completion before updating UI.
+- **Milestone 22 (2026-06-13)**: Hardened GitHub Pages Web OCR by deploying model `.tar` files only into the Pages artifact after the lean extension ZIP is already packaged, avoiding browser CORS failures while preserving Chrome Web Store package size. Extended the Web OCR initialization window and added explicit sandbox init/predict timeout errors so slow first-run PaddleOCR startup no longer collapses into a vague `OCR_ENGINE_TIMEOUT`.
+- **Milestone 21 (2026-06-10)**: Pruned the Lean package runtime payload from ~165MB to ~46MB by hiding `public/wasm` during production builds, copying back only the ORT JSEP runtime actually used by PaddleOCR (`ort-wasm-simd-threaded.jsep.wasm/.mjs`), and deleting Vite's duplicate hashed ORT wasm fallback. Kept ORT wasm local for Chrome Web Store MV3 compliance because it is executable runtime code; model `.tar` files remain fetch-on-demand data. Hardened CI to download real model fixtures from GitHub Releases when local developer model files are absent. History deletion now waits for IndexedDB completion before updating UI.
 - **Milestone 20 (2026-06-10)**: Canonicalized all public GitHub-facing project links to `OCRMeow`. Verified `OCRMeow/releases` returns directly while the legacy misspelled releases path redirects, then updated visible model backup links in both Studio entry points to avoid redirect-dependent URLs and future agent confusion.
 - **Milestone 18 (2026-05-30)**: Eradicated high-priority architectural defects. Replaced stale coordinate caching in `projector.ts` with live browser pixel ratio getters to support dynamic page zoom/resolution screen swaps. Prevented global keyboard listener memory leaks in the dashboard lightbox overlay through unified event closures. Declared missing Shadow DOM `@keyframes` to animate the cyber scanline and led pulses, and introduced an off-screen clipboard fallback for insecure HTTP environments.
 - **Milestone 17 (2026-05-30)**: Transitioned CI pipeline and build pipeline exclusively to a Lean-Only architecture, avoiding weight bloat by hosting model weight assets in GitHub Release drafts and integrating smart, auto-failover, multi-CDN model syncing gateways.

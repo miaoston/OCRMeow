@@ -16,6 +16,8 @@ import { addResultCard } from "./history";
 
 export { IS_WEB_MODE };
 
+const WEB_OCR_TIMEOUT_MS = 180000;
+
 function formatModelDownloadPhase(phase: string, isZh: boolean): string {
   if (isZh) {
     if (phase.includes("Detection")) return "正在下载文本检测模型...";
@@ -171,65 +173,79 @@ export async function performOCR(dataUrl: string): Promise<any[]> {
         return;
       }
 
-      (async () => {
-        // Check if we need to initialize sandbox dynamically (first run fallback)
-        const detBlob = await getAsset("det.tar");
-        const recBlob = await getAsset("rec.tar");
-        let activeDetBlob = detBlob;
-        let activeRecBlob = recBlob;
+      let timeout = 0;
+      const cleanup = (listener: (event: MessageEvent) => void) => {
+        window.removeEventListener("message", listener);
+        window.clearTimeout(timeout);
+      };
 
-        if (!activeDetBlob || !activeRecBlob) {
-          const dRes = await fetch("models/det.tar").catch(() => null);
-          const rRes = await fetch("models/rec.tar").catch(() => null);
-          if (dRes && rRes && dRes.ok && rRes.ok) {
-            activeDetBlob = await dRes.blob();
-            activeRecBlob = await rRes.blob();
-            // Cache them to IndexedDB so subsequent runs are instant & offline-ready
-            saveAsset("det.tar", activeDetBlob).catch(() => {});
-            saveAsset("rec.tar", activeRecBlob).catch(() => {});
-          }
+      const requestId = Math.random().toString(36).substring(7);
+      const listener = (event: MessageEvent) => {
+        if (event.data.action === "OCR_RESULT" && event.data.requestId === requestId) {
+          cleanup(listener);
+          if (event.data.error) reject(new Error(event.data.error));
+          else resolve(event.data.payload?.items || event.data.payload || []);
         }
+      };
 
-        if (activeDetBlob && activeRecBlob) {
+      timeout = window.setTimeout(() => {
+        cleanup(listener);
+        reject(new Error("OCR_ENGINE_TIMEOUT"));
+      }, WEB_OCR_TIMEOUT_MS);
+
+      window.addEventListener("message", listener);
+
+      Promise.resolve()
+        .then(async () => {
+          // Check if we need to initialize sandbox dynamically (first run fallback)
+          const detBlob = await getAsset("det.tar");
+          const recBlob = await getAsset("rec.tar");
+          let activeDetBlob = detBlob;
+          let activeRecBlob = recBlob;
+
+          if (!activeDetBlob || !activeRecBlob) {
+            const dRes = await fetch("models/det.tar").catch(() => null);
+            const rRes = await fetch("models/rec.tar").catch(() => null);
+            if (dRes && rRes && dRes.ok && rRes.ok) {
+              activeDetBlob = await dRes.blob();
+              activeRecBlob = await rRes.blob();
+              // Cache them to IndexedDB so subsequent runs are instant & offline-ready
+              saveAsset("det.tar", activeDetBlob).catch(() => {});
+              saveAsset("rec.tar", activeRecBlob).catch(() => {});
+            }
+          }
+
+          if (activeDetBlob && activeRecBlob) {
+            sandbox.contentWindow?.postMessage(
+              {
+                action: "INIT_CONFIG",
+                payload: {
+                  detBlob: activeDetBlob,
+                  recBlob: activeRecBlob,
+                  wasmPath: "wasm/",
+                },
+              },
+              "*",
+            );
+          }
+
+          if (!sandbox.contentWindow) {
+            throw new Error("OCR_SANDBOX_WINDOW_UNAVAILABLE");
+          }
+
           sandbox.contentWindow?.postMessage(
             {
-              action: "INIT_CONFIG",
-              payload: {
-                detBlob: activeDetBlob,
-                recBlob: activeRecBlob,
-                wasmPath: "wasm/",
-              },
+              action: "RUN_OCR",
+              requestId,
+              payload: { image: dataUrl },
             },
             "*",
           );
-        }
-
-        const requestId = Math.random().toString(36).substring(7);
-        const listener = (event: MessageEvent) => {
-          if (event.data.action === "OCR_RESULT" && event.data.requestId === requestId) {
-            window.removeEventListener("message", listener);
-            clearTimeout(timeout);
-            if (event.data.error) reject(new Error(event.data.error));
-            else resolve(event.data.payload?.items || event.data.payload || []);
-          }
-        };
-
-        // Safety timeout: 60s
-        const timeout = setTimeout(() => {
-          window.removeEventListener("message", listener);
-          reject(new Error("OCR_ENGINE_TIMEOUT"));
-        }, 60000);
-
-        window.addEventListener("message", listener);
-        sandbox.contentWindow?.postMessage(
-          {
-            action: "RUN_OCR",
-            requestId,
-            payload: { image: dataUrl },
-          },
-          "*",
-        );
-      })();
+        })
+        .catch((err: any) => {
+          cleanup(listener);
+          reject(err);
+        });
     });
   }
 }

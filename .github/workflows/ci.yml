@@ -50,6 +50,9 @@ jobs:
       - name: Run OCR Easter Egg Test
         run: node tests/run_ocr_test.js
 
+      - name: Rebuild Clean Production Package
+        run: npm run build
+
       - name: Package Extension ZIP
         run: |
           cd dist
@@ -62,6 +65,18 @@ jobs:
           name: ocrmeow
           path: ocrmeow.zip
           retention-days: 14
+
+      - name: Prepare Pages Demo Models
+        run: |
+          mkdir -p dist/models
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o dist/models/det.tar \
+            https://github.com/miaoston/OCRMeow/releases/download/models/PP-OCRv5_mobile_det_onnx.tar
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o dist/models/rec.tar \
+            https://github.com/miaoston/OCRMeow/releases/download/models/PP-OCRv5_mobile_rec_onnx.tar
+          test "$(wc -c < dist/models/det.tar)" -gt 1000000
+          test "$(wc -c < dist/models/rec.tar)" -gt 1000000
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
