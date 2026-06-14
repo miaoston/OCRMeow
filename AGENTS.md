@@ -211,10 +211,23 @@
   - **Pages Artifact Strategy**: CI must package the Chrome extension ZIP before adding models. After the lean ZIP is uploaded, copy/download `det.tar` and `rec.tar` into `dist/models/` only for the GitHub Pages artifact. This preserves Store package leanness while making Web Demo model fetches same-origin.
   - **CI Rebuild After Test Rule**: `tests/run_ocr_test.js` intentionally rebuilds with `OCRMEOW_INCLUDE_EASTER_EGG=1`. CI must run a clean `npm run build` after the OCR test and before zipping/deploying, otherwise `easter_egg_test.html` can leak into release artifacts.
   - **Timeout Hardening**: Web Studio parent timeout is now longer for first-run model initialization, and `src/sandbox/index.ts` sends explicit `OCR_ENGINE_INIT_TIMEOUT`, `OCR_ENGINE_PREDICT_TIMEOUT`, or `OCR_MODELS_NOT_READY` errors instead of letting the parent surface only a vague `OCR_ENGINE_TIMEOUT`.
+- **[2026-06-14] (Studio Boot Interactivity Hardening)**:
+  - **Bind UI Before Model Probing**: `src/dashboard/index.ts` must bind navigation, upload, paste, and settings listeners before any asynchronous model status checks, IndexedDB model reads, or setup wizard logic. Otherwise slow/failed Pages asset checks can leave the page visually loaded but functionally dead.
+  - **Settings Load Boundary**: `loadSettings()` should apply saved settings only. Do not make it await `checkModelStatus()`; model readiness is a separate async concern and must not block the dashboard shell.
+  - **Smoke Test Coverage Gap**: Hidden file inputs can be driven by Puppeteer even when the visible Settings tab never actually opened. Always assert `#nav-history/#view-history` and `#nav-settings/#view-settings` active-state changes to catch missing event binding.
+  - **Local Static Server Cache Trap**: `sirv` can keep returning 404 for hashed assets added after the server started. If `index.html` points at a new `assets/index-*.js`, restart the static server after rebuilding or re-copying `dist`; otherwise the page appears frozen because the entry module never loads.
 
 ---
 
 ## 🔄 7. Changelog
+
+### [2026-06-14] Milestone 23 - Studio Boot Interactivity Hardening
+
+**Dashboard Startup**
+
+- **Immediate UI Binding**: Bound navigation, upload, paste, and settings event listeners before asynchronous settings/model/status work so the dashboard remains interactive while Web OCR assets are probed.
+- **Model Status Decoupling**: Removed model readiness checks from `loadSettings()` and moved them into a separate async startup phase.
+- **Navigation Smoke Assertion**: Extended `tests/run_ocr_test.js` to assert that History and Settings tabs actually become active after clicks.
 
 ### [2026-06-13] Milestone 22 - Store Readiness, Privacy UX, Incognito Hardening
 

@@ -1,5 +1,56 @@
 import { saveHistory } from "../utils/db";
 
+const DASHBOARD_MENU_ID = "open-dashboard";
+
+function ignoreContextMenuLastError(): void {
+  const message = chrome.runtime.lastError?.message;
+  if (message && !message.includes("Cannot create item with duplicate id")) {
+    console.warn(message);
+  }
+}
+
+function ensureDashboardContextMenu(): void {
+  chrome.contextMenus.create(
+    {
+      id: DASHBOARD_MENU_ID,
+      title: "🐱 Open OCRMeow Studio",
+      contexts: ["action"],
+    },
+    ignoreContextMenuLastError,
+  );
+}
+
+function createDashboardTab(windowId?: number): Promise<chrome.tabs.Tab> {
+  const tabOptions: chrome.tabs.CreateProperties = {
+    url: chrome.runtime.getURL("dashboard.html"),
+  };
+  if (typeof windowId === "number") {
+    tabOptions.windowId = windowId;
+  }
+  return chrome.tabs.create(tabOptions);
+}
+
+function openDashboardInLastFocusedWindow(): void {
+  chrome.windows
+    .getLastFocused({ populate: false, windowTypes: ["normal"] })
+    .then((win) => createDashboardTab(win.id))
+    .catch(() => {
+      createDashboardTab();
+    });
+}
+
+function openDashboardFromSource(tab?: chrome.tabs.Tab): void {
+  if (typeof tab?.windowId === "number") {
+    createDashboardTab(tab.windowId).catch(() => {
+      openDashboardInLastFocusedWindow();
+    });
+    return;
+  }
+  openDashboardInLastFocusedWindow();
+}
+
+ensureDashboardContextMenu();
+
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab.id || !tab.url || tab.url.startsWith("chrome://")) return;
 
@@ -22,17 +73,13 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: "open-dashboard",
-      title: "🐱 Open OCRMeow Studio",
-      contexts: ["action"],
-    });
+    ensureDashboardContextMenu();
   });
 });
 
-chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId === "open-dashboard") {
-    chrome.tabs.create({ url: "dashboard.html" });
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === DASHBOARD_MENU_ID) {
+    openDashboardFromSource(tab);
   }
 });
 

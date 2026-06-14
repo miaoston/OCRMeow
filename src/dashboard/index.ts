@@ -40,8 +40,27 @@ function setupNavigation(): void {
 
 // ─── Boot ──────────────────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Web-Mode adaptation
+async function initializeModelState(): Promise<void> {
+  if (IS_WEB_MODE) {
+    const det = await getAsset("det.tar");
+    const rec = await getAsset("rec.tar");
+    if (!det || !rec) {
+      const bundledExist = await checkBundledModelsExist();
+      if (bundledExist) {
+        await checkModelStatus();
+      } else {
+        await showSetupWizard();
+        await checkModelStatus();
+      }
+    } else {
+      await checkModelStatus();
+    }
+  } else {
+    await checkModelStatus();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   if (IS_WEB_MODE) {
     const disabledIds = ["setting-theme-action", "setting-distortion"];
     disabledIds.forEach((id) => {
@@ -64,8 +83,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  await loadSettings(applyLanguage, applyStudioTheme, checkModelStatus);
-  applyLanguage();
   setupNavigation();
   setupDropzone(processOCR);
   setupPaste(processOCR);
@@ -79,25 +96,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     handleSingleModelImport,
     checkModelStatus,
   });
-  await loadHistoryView();
 
-  // Automatic Wizard for Web Mode
-  if (IS_WEB_MODE) {
-    const det = await getAsset("det.tar");
-    const rec = await getAsset("rec.tar");
-    if (!det || !rec) {
-      const bundledExist = await checkBundledModelsExist();
-      if (bundledExist) {
-        checkModelStatus();
-      } else {
-        showSetupWizard().then(() => {
-          checkModelStatus();
-        });
-      }
-    } else {
-      checkModelStatus();
-    }
-  } else {
-    checkModelStatus();
-  }
+  Promise.resolve()
+    .then(async () => {
+      await loadSettings(applyLanguage, applyStudioTheme);
+      applyLanguage();
+      await loadHistoryView();
+      await initializeModelState();
+    })
+    .catch((err: any) => {
+      console.error("OCR Studio: Startup initialization failed", err);
+    });
 });

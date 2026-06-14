@@ -40,7 +40,6 @@ export async function saveSettings(): Promise<void> {
 export async function loadSettings(
   applyLanguage: () => void,
   applyStudioTheme: (theme: string) => void,
-  checkModelStatus: () => Promise<void>,
 ): Promise<void> {
   let settings: any = null;
   if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
@@ -75,7 +74,6 @@ export async function loadSettings(
 
   applyStudioTheme(currentSettings.themeStudio);
   applyLanguage();
-  await checkModelStatus();
 }
 
 // ─── Settings Listeners ────────────────────────────────────────────

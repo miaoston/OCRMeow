@@ -17,6 +17,7 @@ import { addResultCard } from "./history";
 export { IS_WEB_MODE };
 
 const WEB_OCR_TIMEOUT_MS = 180000;
+type LoadingProgressReporter = (phase: string, pct?: number) => void;
 
 function formatModelDownloadPhase(phase: string, isZh: boolean): string {
   if (isZh) {
@@ -48,6 +49,81 @@ function firstRunDownloadMessage(isZh: boolean): string {
       <p>OCRMeow protects your privacy: recognition runs locally in your browser and is never uploaded to the cloud. History can be cleared from Settings.</p>
     </div>
   `;
+}
+
+function updateLoadingText(phase: string, pct?: number): void {
+  const loadingText = document.getElementById("loading-text");
+  if (!loadingText) return;
+  loadingText.textContent =
+    typeof pct === "number" ? `⚡ ${phase} ${Math.round(pct)}%` : `⚡ ${phase}`;
+}
+
+function webOcrPhase(key: "det" | "rec" | "init" | "run", isZh: boolean): string {
+  if (isZh) {
+    if (key === "det") return "正在加载检测模型";
+    if (key === "rec") return "正在加载识别模型";
+    if (key === "init") return "正在初始化本地 OCR 引擎";
+    return "正在本地识别图片";
+  }
+  if (key === "det") return "Loading detection model";
+  if (key === "rec") return "Loading recognition model";
+  if (key === "init") return "Initializing local OCR engine";
+  return "Recognizing locally";
+}
+
+async function responseToBlobWithProgress(
+  response: Response,
+  phase: string,
+  startPct: number,
+  endPct: number,
+  onProgress?: LoadingProgressReporter,
+): Promise<Blob> {
+  const total = Number(response.headers.get("content-length")) || 0;
+  if (!response.body || total <= 0) {
+    const blob = await response.blob();
+    if (onProgress) onProgress(phase, endPct);
+    return blob;
+  }
+
+  const reader = response.body.getReader();
+  const chunks: ArrayBuffer[] = [];
+  let received = 0;
+  let done = false;
+
+  while (!done) {
+    const result = await reader.read();
+    done = result.done;
+    if (result.value) {
+      const chunk = result.value.buffer.slice(
+        result.value.byteOffset,
+        result.value.byteOffset + result.value.byteLength,
+      ) as ArrayBuffer;
+      chunks.push(chunk);
+      received += result.value.byteLength;
+      const fraction = Math.min(received / total, 1);
+      const pct = Math.round(startPct + (endPct - startPct) * fraction);
+      if (onProgress) onProgress(phase, pct);
+    }
+  }
+
+  return new Blob(chunks, {
+    type: response.headers.get("content-type") || "application/octet-stream",
+  });
+}
+
+async function fetchBundledModelWithProgress(
+  type: "det" | "rec",
+  phase: string,
+  startPct: number,
+  endPct: number,
+  onProgress?: LoadingProgressReporter,
+): Promise<Blob> {
+  if (onProgress) onProgress(phase, startPct);
+  const response = await fetch(`models/${type}.tar`);
+  if (!response.ok) throw new Error(`OCR_MODEL_${type.toUpperCase()}_UNAVAILABLE`);
+  const blob = await responseToBlobWithProgress(response, phase, startPct, endPct, onProgress);
+  await saveAsset(`${type}.tar`, blob);
+  return blob;
 }
 
 // ─── Bundled Model Check ───────────────────────────────────────────
@@ -111,9 +187,12 @@ export async function processOCR(base64Image: string, sourceName: string): Promi
   }
 
   loadingEl.style.display = "block";
+  updateLoadingText(
+    getLang() === "zh" ? "喵力加载中，正在准备本地识别..." : "Preparing local OCR...",
+  );
   const startTime = performance.now();
 
-  performOCR(base64Image)
+  performOCR(base64Image, updateLoadingText)
     .then(async (items) => {
       const elapsed = Math.round(performance.now() - startTime);
       loadingEl.style.display = "none";
@@ -155,7 +234,10 @@ export async function processOCR(base64Image: string, sourceName: string): Promi
  * NOTE: `skipHistory: true` has been REMOVED from the extension path —
  *       the background worker no longer auto-saves history.
  */
-export async function performOCR(dataUrl: string): Promise<any[]> {
+export async function performOCR(
+  dataUrl: string,
+  onProgress?: LoadingProgressReporter,
+): Promise<any[]> {
   if (!IS_WEB_MODE) {
     // EXTENSION PATH
     const response = await chrome.runtime.sendMessage({
@@ -197,25 +279,36 @@ export async function performOCR(dataUrl: string): Promise<any[]> {
 
       Promise.resolve()
         .then(async () => {
+          const isZh = getLang() === "zh";
+          if (onProgress) onProgress(webOcrPhase("init", isZh), 2);
+
           // Check if we need to initialize sandbox dynamically (first run fallback)
           const detBlob = await getAsset("det.tar");
           const recBlob = await getAsset("rec.tar");
           let activeDetBlob = detBlob;
           let activeRecBlob = recBlob;
 
-          if (!activeDetBlob || !activeRecBlob) {
-            const dRes = await fetch("models/det.tar").catch(() => null);
-            const rRes = await fetch("models/rec.tar").catch(() => null);
-            if (dRes && rRes && dRes.ok && rRes.ok) {
-              activeDetBlob = await dRes.blob();
-              activeRecBlob = await rRes.blob();
-              // Cache them to IndexedDB so subsequent runs are instant & offline-ready
-              saveAsset("det.tar", activeDetBlob).catch(() => {});
-              saveAsset("rec.tar", activeRecBlob).catch(() => {});
-            }
+          if (!activeDetBlob) {
+            activeDetBlob = await fetchBundledModelWithProgress(
+              "det",
+              webOcrPhase("det", isZh),
+              5,
+              32,
+              onProgress,
+            );
+          }
+          if (!activeRecBlob) {
+            activeRecBlob = await fetchBundledModelWithProgress(
+              "rec",
+              webOcrPhase("rec", isZh),
+              36,
+              86,
+              onProgress,
+            );
           }
 
           if (activeDetBlob && activeRecBlob) {
+            if (onProgress) onProgress(webOcrPhase("init", isZh), 92);
             sandbox.contentWindow?.postMessage(
               {
                 action: "INIT_CONFIG",
@@ -233,6 +326,7 @@ export async function performOCR(dataUrl: string): Promise<any[]> {
             throw new Error("OCR_SANDBOX_WINDOW_UNAVAILABLE");
           }
 
+          if (onProgress) onProgress(webOcrPhase("run", isZh), 96);
           sandbox.contentWindow?.postMessage(
             {
               action: "RUN_OCR",

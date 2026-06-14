@@ -187,8 +187,26 @@ async function runTest() {
       await page.waitForSelector(".modal-overlay", { hidden: true });
     }
 
+    console.log("🚀 Verifying dashboard navigation is interactive...");
+    await page.click("#nav-history");
+    await page.waitForFunction(
+      () =>
+        document.querySelector("#nav-history")?.classList.contains("active") &&
+        document.querySelector("#view-history")?.classList.contains("active"),
+      { timeout: 5000 },
+    );
+
+    await page.click("#nav-settings");
+    await page.waitForFunction(
+      () =>
+        document.querySelector("#nav-settings")?.classList.contains("active") &&
+        document.querySelector("#view-settings")?.classList.contains("active"),
+      { timeout: 5000 },
+    );
+    console.log("🎉 SUCCESS: Dashboard Navigation Test Passed!");
+
     console.log("🚀 Verifying the model import functionality...");
-    // Click settings tab to expose settings
+    // Keep settings tab active to expose settings visually.
     await page.click("#nav-settings");
 
     // Find the hidden input and upload the local tar files

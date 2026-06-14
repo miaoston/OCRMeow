@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "OCRMeow",
   "version": "0.1.0",
+  "incognito": "split",
   "description": "3D Liquid Glassmorphism OCR Chrome Extension based on PaddleOCR.js",
   "permissions": ["activeTab", "storage", "offscreen", "scripting", "contextMenus", "downloads"],
   "host_permissions": [
